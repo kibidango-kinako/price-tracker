@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RandY | PSA10取引ダッシュボード</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    body { background: #0f172a; color: #e2e8f0; }
+    .card { background: #1e293b; border: 1px solid #334155; }
+    .stat-value { font-variant-numeric: tabular-nums; }
+    #table-body tr:hover { background: #1e3a5f; }
+    .badge { display:inline-block; padding:1px 7px; border-radius:9999px; font-size:11px; font-weight:700; }
+    .badge-SAR  { background:#7c3aed22; color:#a78bfa; border:1px solid #7c3aed44; }
+    .badge-HR   { background:#dc262622; color:#fca5a5; border:1px solid #dc262644; }
+    .badge-SR   { background:#0369a122; color:#7dd3fc; border:1px solid #0369a144; }
+    .badge-MA   { background:#d9770622; color:#fcd34d; border:1px solid #d9770644; }
+    .badge-other{ background:#33415544; color:#94a3b8; border:1px solid #47556933; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ヘッダー -->
+  <header class="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl font-black tracking-tight text-white">RandY</span>
+      <span class="text-slate-400 text-sm font-medium">PSA10 取引ダッシュボード</span>
+    </div>
+    <div id="last-updated" class="text-xs text-slate-500">読み込み中...</div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+
+    <!-- ローディング -->
+    <div id="loading" class="text-center py-20 text-slate-400">
+      <div class="text-4xl mb-3">⏳</div>
+      <p>データを読み込んでいます...</p>
+    </div>
+
+    <!-- エラー -->
+    <div id="error" class="hidden text-center py-20 text-red-400">
+      <div class="text-4xl mb-3">⚠️</div>
+      <p id="error-msg">データの読み込みに失敗しました</p>
+    </div>
+
+    <!-- コンテンツ -->
+    <div id="content" class="hidden space-y-8">
+
+      <!-- 今日のサマリー -->
+      <section>
+        <h2 class="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-4">Today's Summary</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="card rounded-xl p-5">
+            <p class="text-xs text-slate-400 mb-1">今日の取引件数</p>
+            <p id="s-today-count" class="stat-value text-3xl font-bold text-white">—</p>
+          </div>
+          <div class="card rounded-xl p-5">
+            <p class="text-xs text-slate-400 mb-1">取引カード種類</p>
+            <p id="s-card-count" class="stat-value text-3xl font-bold text-white">—</p>
+          </div>
+          <div class="card rounded-xl p-5">
+            <p class="text-xs text-slate-400 mb-1">平均取引価格</p>
+            <p id="s-avg-price" class="stat-value text-3xl font-bold text-emerald-400">—</p>
+          </div>
+          <div class="card rounded-xl p-5">
+            <p class="text-xs text-slate-400 mb-1">最高取引価格</p>
+            <p id="s-max-price" class="stat-value text-3xl font-bold text-amber-400">—</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 今日の取引カード一覧 -->
+      <section>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xs font-semibold tracking-widest text-slate-400 uppercase">Today's Cards (PSA10)</h2>
+          <input id="search" type="text" placeholder="カード名で絞り込み"
+            class="bg-slate-800 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-56" />
+        </div>
+        <div class="card rounded-xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-700 text-xs text-slate-400 uppercase tracking-wider">
+                <th class="px-4 py-3 text-left cursor-pointer hover:text-white" onclick="sortTable('card_name')">カード名</th>
+                <th class="px-4 py-3 text-center cursor-pointer hover:text-white" onclick="sortTable('rarity')">レア</th>
+                <th class="px-4 py-3 text-center cursor-pointer hover:text-white" onclick="sortTable('count')">件数</th>
+                <th class="px-4 py-3 text-right cursor-pointer hover:text-white" onclick="sortTable('avg_price')">平均価格</th>
+                <th class="px-4 py-3 text-right cursor-pointer hover:text-white" onclick="sortTable('min_price')">最安値</th>
+                <th class="px-4 py-3 text-right cursor-pointer hover:text-white" onclick="sortTable('max_price')">最高値</th>
+                <th class="px-4 py-3 text-left">弾名</th>
+              </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-700/50"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- グラフ: 取引件数ランキング -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <section>
+          <h2 class="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-4">取引件数ランキング (本日)</h2>
+          <div class="card rounded-xl p-5">
+            <canvas id="chart-count" height="280"></canvas>
+          </div>
+        </section>
+        <section>
+          <h2 class="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-4">日次取引件数推移</h2>
+          <div class="card rounded-xl p-5">
+            <canvas id="chart-daily" height="280"></canvas>
+          </div>
+        </section>
+      </div>
+
+      <!-- 直近取引ログ -->
+      <section>
+        <h2 class="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-4">直近50件の取引ログ</h2>
+        <div class="card rounded-xl overflow-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-700 text-xs text-slate-400 uppercase tracking-wider">
+                <th class="px-4 py-3 text-left">取引日時</th>
+                <th class="px-4 py-3 text-left">カード名</th>
+                <th class="px-4 py-3 text-center">レア</th>
+                <th class="px-4 py-3 text-right">価格</th>
+              </tr>
+            </thead>
+            <tbody id="log-body" class="divide-y divide-slate-700/50"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </main>
+
+  <script>
+    // ===== 設定 =====
+    // setup_gdrive_auth.py 実行後に data/gdrive_file_id.txt の内容を貼り付けてください
+    const DRIVE_FILE_ID = '1c-71mRvBwgWFncqupKsLG3L_0zmkmDZT';
+
+    const DATA_URL = DRIVE_FILE_ID === 'REPLACE_WITH_FILE_ID'
+      ? null
+      : `https://drive.usercontent.google.com/download?id=${DRIVE_FILE_ID}&export=download&authuser=0`;
+
+    // ===== グローバル状態 =====
+    let allCards = [];
+    let sortKey = 'count';
+    let sortAsc = false;
+
+    // ===== ユーティリティ =====
+    const fmt = n => Number(n).toLocaleString('ja-JP');
+    const yen = n => `¥${fmt(n)}`;
+    const rarityBadge = r => {
+      const cls = ['SAR','HR','SR','MA'].includes(r) ? `badge-${r}` : 'badge-other';
+      return `<span class="badge ${cls}">${r || '—'}</span>`;
+    };
+
+    // ===== メインロード =====
+    async function loadData() {
+      if (!DATA_URL) {
+        showError('DRIVE_FILE_ID が設定されていません。<br>setup_gdrive_auth.py を実行後、docs/index.html の REPLACE_WITH_FILE_ID を実際のIDに書き換えてください。');
+        return;
+      }
+      try {
+        const res = await fetch(DATA_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        render(data);
+      } catch (e) {
+        showError(`読み込みエラー: ${e.message}`);
+      }
+    }
+
+    function render(data) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('content').classList.remove('hidden');
+      document.getElementById('last-updated').textContent = `最終更新: ${data.generated_at}`;
+
+      const today = data.today_cards || [];
+      allCards = today;
+
+      // サマリー
+      const prices = today.map(c => c.avg_price).filter(Boolean);
+      document.getElementById('s-today-count').textContent = fmt(data.today_count || 0);
+      document.getElementById('s-card-count').textContent = fmt(today.length);
+      document.getElementById('s-avg-price').textContent = prices.length
+        ? yen(Math.round(prices.reduce((a,b)=>a+b,0)/prices.length)) : '—';
+      document.getElementById('s-max-price').textContent = prices.length
+        ? yen(Math.max(...today.map(c => c.max_price))) : '—';
+
+      renderTable(today);
+      renderChartCount(today.slice(0, 12));
+      renderChartDaily(data.daily_summary || []);
+      renderLog((data.transactions || []).slice(0, 50));
+    }
+
+    // ===== テーブル =====
+    function renderTable(cards) {
+      const q = document.getElementById('search').value.toLowerCase();
+      const filtered = q ? cards.filter(c => (c.card_name||'').toLowerCase().includes(q)) : cards;
+      const sorted = [...filtered].sort((a,b) => {
+        const va = a[sortKey], vb = b[sortKey];
+        if (typeof va === 'number') return sortAsc ? va-vb : vb-va;
+        return sortAsc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+      });
+
+      document.getElementById('table-body').innerHTML = sorted.map(c => `
+        <tr class="cursor-pointer" onclick="window.open('${c.url}','_blank')">
+          <td class="px-4 py-3 font-medium text-white">${c.card_name || '—'}</td>
+          <td class="px-4 py-3 text-center">${rarityBadge(c.rarity)}</td>
+          <td class="px-4 py-3 text-center font-bold text-indigo-300">${c.count}</td>
+          <td class="px-4 py-3 text-right text-emerald-300">${yen(c.avg_price)}</td>
+          <td class="px-4 py-3 text-right text-slate-300">${yen(c.min_price)}</td>
+          <td class="px-4 py-3 text-right text-amber-300">${yen(c.max_price)}</td>
+          <td class="px-4 py-3 text-slate-400 text-xs">${c.set_name || '—'}</td>
+        </tr>`).join('');
+    }
+
+    function sortTable(key) {
+      sortAsc = sortKey === key ? !sortAsc : false;
+      sortKey = key;
+      renderTable(allCards);
+    }
+
+    document.getElementById('search').addEventListener('input', () => renderTable(allCards));
+
+    // ===== グラフ =====
+    function renderChartCount(cards) {
+      new Chart(document.getElementById('chart-count'), {
+        type: 'bar',
+        data: {
+          labels: cards.map(c => c.card_name.length > 14 ? c.card_name.slice(0,13)+'…' : c.card_name),
+          datasets: [{
+            data: cards.map(c => c.count),
+            backgroundColor: '#6366f1cc',
+            borderColor: '#818cf8',
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color:'#94a3b8' }, grid: { color:'#1e293b' } },
+            y: { ticks: { color:'#94a3b8', font:{size:11} }, grid: { display:false } }
+          }
+        }
+      });
+    }
+
+    function renderChartDaily(summary) {
+      const rev = [...summary].reverse();
+      new Chart(document.getElementById('chart-daily'), {
+        type: 'line',
+        data: {
+          labels: rev.map(d => d.date.slice(5)),
+          datasets: [{
+            label: '取引件数',
+            data: rev.map(d => d.count),
+            borderColor: '#34d399',
+            backgroundColor: '#34d39922',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color:'#94a3b8' } } },
+          scales: {
+            x: { ticks: { color:'#94a3b8', maxRotation:45 }, grid: { color:'#1e293b' } },
+            y: { ticks: { color:'#94a3b8' }, grid: { color:'#1e293b' } }
+          }
+        }
+      });
+    }
+
+    // ===== 直近ログ =====
+    function renderLog(txs) {
+      document.getElementById('log-body').innerHTML = txs.map(t => `
+        <tr>
+          <td class="px-4 py-2 text-slate-400 text-xs whitespace-nowrap">${t.transaction_date || t.transaction_date_raw || '—'}</td>
+          <td class="px-4 py-2 text-white text-sm">
+            <a href="${t.url}" target="_blank" class="hover:text-indigo-400">${t.card_name || '—'}</a>
+          </td>
+          <td class="px-4 py-2 text-center">${rarityBadge(t.rarity)}</td>
+          <td class="px-4 py-2 text-right font-mono text-emerald-300">${yen(t.price)}</td>
+        </tr>`).join('');
+    }
+
+    function showError(msg) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error').classList.remove('hidden');
+      document.getElementById('error-msg').innerHTML = msg;
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
