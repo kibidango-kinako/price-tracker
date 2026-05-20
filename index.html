@@ -7,113 +7,92 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
   :root {
-    --bg: #0f0f0f;
-    --bg2: #1a1a1a;
-    --bg3: #242424;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.14);
-    --text: #f0f0f0;
-    --text2: #888;
-    --text3: #555;
-    --accent: #e8a020;
-    --accent2: #c47f10;
-    --green: #4caf7d;
-    --red: #e05555;
-    --blue: #5b9cf6;
-    --radius: 10px;
-    --radius-lg: 14px;
+    --bg: #0f0f0f; --bg2: #1a1a1a; --bg3: #242424;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0; --text2: #888; --text3: #555;
+    --accent: #e8a020; --accent2: #c47f10;
+    --green: #4caf7d; --red: #e05555; --blue: #5b9cf6;
+    --radius: 10px; --radius-lg: 14px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', 'Hiragino Sans', sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue','Hiragino Sans',sans-serif; min-height: 100vh; }
 
-  /* Header */
   .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .header-left { display: flex; align-items: center; gap: 10px; }
-  .header-left h1 { font-size: 16px; font-weight: 600; letter-spacing: .02em; }
-  .header-left .badge { background: var(--accent); color: #000; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: .06em; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+  .header-left h1 { font-size: 16px; font-weight: 600; }
+  .badge-live { background: var(--accent); color: #000; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: .06em; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--text3); }
   .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
-  .status-dot.ok { background: var(--green); }
-  .status-dot.error { background: var(--red); }
+  .status-dot.ok     { background: var(--green); }
+  .status-dot.error  { background: var(--red); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
   .header-right { display: flex; align-items: center; gap: 8px; }
   #statusText { font-size: 12px; color: var(--text2); }
-  .reload-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 6px 12px; border-radius: var(--radius); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background .15s; }
+  .reload-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 6px 12px; border-radius: var(--radius); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
   .reload-btn:hover { background: var(--border); }
 
-  /* Layout */
-  .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
 
-  /* Metrics */
-  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
-  .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-  .metric .m-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
-  .metric .m-val { font-size: 24px; font-weight: 600; color: var(--text); line-height: 1; }
-  .metric .m-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
-  .metric.accent { border-color: var(--accent2); }
-  .metric.accent .m-val { color: var(--accent); }
-
-  /* Section title */
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; }
   .section-title { font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: .08em; display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
 
-  /* Card panel */
-  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; }
-
-  /* Select */
   select { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 8px 12px; border-radius: var(--radius); font-size: 13px; width: 100%; margin-bottom: 12px; cursor: pointer; }
   select:focus { outline: none; border-color: var(--accent2); }
 
-  /* Chart stats */
-  .chart-stats { display: flex; gap: 20px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .chart-stats { display: flex; gap: 20px; margin-bottom: 12px; flex-wrap: wrap; }
   .chart-stats span { font-size: 12px; }
-
-  /* Chart */
   .chart-wrap { position: relative; width: 100%; height: 240px; }
 
   /* Table */
   .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
-  th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
-  td { padding: 10px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 860px; }
+  th {
+    padding: 8px 10px; border-bottom: 1px solid var(--border);
+    font-size: 11px; color: var(--text2); font-weight: 500;
+    text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
+    text-align: right; user-select: none;
+  }
+  th:first-child { text-align: left; }
+  th.sortable { cursor: pointer; }
+  th.sortable:hover { color: var(--text); }
+  th.sort-active { color: var(--accent); }
+  th .sort-icon { margin-left: 4px; font-size: 10px; }
+
+  td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; text-align: right; }
+  td:first-child { text-align: left; }
   tr:last-child td { border-bottom: none; }
-  tbody tr { cursor: pointer; transition: background .12s; }
-  tbody tr:hover td { background: rgba(255,255,255,.03); }
+  tbody tr { cursor: pointer; transition: background .1s; }
+  tbody tr:hover td { background: rgba(255,255,255,.025); }
   tbody tr.active td { background: rgba(232,160,32,.07); }
 
-  /* Card name cell */
-  .card-link { color: var(--text); text-decoration: none; font-size: 13px; font-weight: 500; line-height: 1.4; }
+  .card-link { color: var(--text); text-decoration: none; font-size: 12px; font-weight: 500; line-height: 1.4; }
   .card-link:hover { color: var(--accent); text-decoration: underline; }
-  .card-meta { font-size: 11px; color: var(--text3); margin-top: 3px; line-height: 1.4; }
+  .card-meta { font-size: 10px; color: var(--text3); margin-top: 2px; }
 
-  /* Rarity badge */
-  .rarity { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: .04em; white-space: nowrap; }
+  .rarity { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; letter-spacing: .03em; white-space: nowrap; }
   .r-SAR { background: rgba(232,160,32,.15); color: var(--accent); border: 1px solid rgba(232,160,32,.3); }
   .r-HR  { background: rgba(224,85,85,.15);  color: var(--red);    border: 1px solid rgba(224,85,85,.3); }
   .r-SR  { background: rgba(91,156,246,.15); color: var(--blue);   border: 1px solid rgba(91,156,246,.3); }
   .r-MA  { background: rgba(76,175,125,.15); color: var(--green);  border: 1px solid rgba(76,175,125,.3); }
   .r-other { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
 
-  /* Price cells */
   .price-high { color: var(--red); font-weight: 500; }
   .price-low  { color: var(--green); font-weight: 500; }
-  .price-avg  { color: var(--text); font-weight: 600; }
+  .price-avg  { font-weight: 600; }
 
-  /* Day-over-day change */
-  .chg { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .chg { font-size: 11px; font-weight: 700; white-space: nowrap; }
   .chg.up   { color: var(--green); }
   .chg.down { color: var(--red); }
   .chg.flat { color: var(--text3); }
 
-  /* Loading / empty */
+  .buy-price { font-size: 11px; color: var(--text2); }
+
   .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; gap: 14px; }
-  .loading-state .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-state p { font-size: 13px; color: var(--text2); }
 
-  /* Mobile */
   @media (max-width: 480px) {
-    .metrics { grid-template-columns: repeat(3, 1fr); }
-    .metric .m-val { font-size: 18px; }
     .header-left h1 { font-size: 14px; }
     .chart-wrap { height: 200px; }
   }
@@ -124,7 +103,7 @@
 <div class="header">
   <div class="header-left">
     <h1>PSA10 相場</h1>
-    <span class="badge">LIVE</span>
+    <span class="badge-live">LIVE</span>
   </div>
   <div class="header-right">
     <div class="status-dot loading" id="dot"></div>
@@ -140,13 +119,11 @@
   </div>
 
   <div id="mainView" style="display:none">
-    <!-- サマリー -->
-    <div class="metrics" id="metrics"></div>
 
     <!-- 価格推移 -->
     <div class="panel" id="chartPanel">
       <div class="section-title"><i class="ti ti-chart-line"></i> 価格推移</div>
-      <select id="cardSelect" onchange="renderChart(true)"></select>
+      <select id="cardSelect" onchange="renderChart()"></select>
       <div class="chart-stats" id="chartStats"></div>
       <div class="chart-wrap">
         <canvas id="priceChart"></canvas>
@@ -155,18 +132,34 @@
 
     <!-- 相場一覧 -->
     <div class="panel">
-      <div class="section-title"><i class="ti ti-layout-list"></i> 相場一覧（平均価格順）</div>
+      <div class="section-title"><i class="ti ti-layout-list"></i> 相場一覧</div>
       <div class="tbl-wrap">
         <table>
           <thead>
             <tr>
-              <th>カード名 / 弾・No.</th>
+              <th style="text-align:left">カード名 / 弾・No.</th>
               <th>レア</th>
-              <th style="text-align:right">件数</th>
-              <th style="text-align:right">高値</th>
-              <th style="text-align:right">安値</th>
-              <th style="text-align:right">平均</th>
-              <th style="text-align:right">前日比</th>
+              <th class="sortable" onclick="setSort('cnt')" id="th-cnt">
+                件数<span class="sort-icon" id="si-cnt"></span>
+              </th>
+              <th class="sortable" onclick="setSort('mx')" id="th-mx">
+                高値<span class="sort-icon" id="si-mx"></span>
+              </th>
+              <th class="sortable" onclick="setSort('mn')" id="th-mn">
+                安値<span class="sort-icon" id="si-mn"></span>
+              </th>
+              <th class="sortable" onclick="setSort('avg')" id="th-avg">
+                平均<span class="sort-icon" id="si-avg"></span>
+              </th>
+              <th class="sortable sort-active" onclick="setSort('dod')" id="th-dod">
+                前日比<span class="sort-icon" id="si-dod">↓</span>
+              </th>
+              <th title="スニダン (手数料9.3%+送料¥240) で利益率10%になる仕入れ上限">
+                仕入判断<br><span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:10px">SNKRDUNK</span>
+              </th>
+              <th title="メルカリ (手数料10%+送料¥160) で利益率10%になる仕入れ上限">
+                仕入判断<br><span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:10px">メルカリ</span>
+              </th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -183,6 +176,9 @@ const DB_URL = 'https://raw.githubusercontent.com/kibidango-kinako/price-tracker
 let db = null;
 let chartInst = null;
 let activeRow = null;
+let tableData = [];
+let sortCol = 'dod';
+let sortDir = -1; // -1 = 降順, 1 = 昇順
 
 function setStatus(msg, state) {
   document.getElementById('statusText').textContent = msg;
@@ -196,9 +192,8 @@ async function loadData() {
   try {
     const res = await fetch(DB_URL + '?t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const buf = await res.arrayBuffer();
     const SQL = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/' + f });
-    db = new SQL.Database(new Uint8Array(buf));
+    db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
     const now = new Date().toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
     setStatus(now + ' 更新', 'ok');
     buildDashboard();
@@ -216,7 +211,8 @@ function q(sql, params) {
   return values.map(r => Object.fromEntries(columns.map((c, i) => [c, r[i]])));
 }
 
-function fmt(v) { return v != null ? '¥' + parseInt(v).toLocaleString() : '—'; }
+const fmt = v => v != null ? '¥' + parseInt(v).toLocaleString() : '—';
+const escJs = s => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
 function rarityBadge(r) {
   const cls = ['SAR','HR','SR','MA'].includes(r) ? 'r-' + r : 'r-other';
@@ -226,134 +222,155 @@ function rarityBadge(r) {
 function buildDashboard() {
   document.getElementById('loadingView').style.display = 'none';
   document.getElementById('mainView').style.display = 'block';
-  buildMetrics();
   buildTable();
   buildCardSelect();
-  renderChart(false);
+  renderChart();
 }
 
-function buildMetrics() {
-  const r = q('SELECT COUNT(*) as cnt, MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(DISTINCT card_name) as cards, COUNT(DISTINCT collected_date) as days FROM psa10_transactions')[0];
-  document.getElementById('metrics').innerHTML = `
-    <div class="metric"><div class="m-label">取引件数</div><div class="m-val">${r.cnt}</div><div class="m-sub">累計</div></div>
-    <div class="metric accent"><div class="m-label">最高値</div><div class="m-val">${(r.mx/10000).toFixed(1)}万</div><div class="m-sub">円</div></div>
-    <div class="metric"><div class="m-label">最安値</div><div class="m-val">${(r.mn/10000).toFixed(1)}万</div><div class="m-sub">円</div></div>
-    <div class="metric"><div class="m-label">平均単価</div><div class="m-val">${(r.avg/10000).toFixed(1)}万</div><div class="m-sub">円</div></div>
-    <div class="metric"><div class="m-label">銘柄数</div><div class="m-val">${r.cards}</div><div class="m-sub">カード</div></div>
-    <div class="metric"><div class="m-label">蓄積日数</div><div class="m-val">${r.days}</div><div class="m-sub">日分</div></div>
-  `;
-}
-
-// 前日比マップを構築: card_name -> { today, prev }
-function buildDayOverDayMap() {
+// 前日比マップ: apparel_id -> [最新日avg, 前日avg]
+function buildDodMap() {
   const rows = q(`
-    SELECT card_name, collected_date, CAST(AVG(price) AS INT) as daily_avg
+    SELECT apparel_id, collected_date, CAST(AVG(price) AS INT) as da
     FROM psa10_transactions
-    GROUP BY card_name, collected_date
-    ORDER BY card_name, collected_date DESC
+    GROUP BY apparel_id, collected_date
+    ORDER BY apparel_id, collected_date DESC
   `);
   const map = {};
   rows.forEach(r => {
-    if (!map[r.card_name]) map[r.card_name] = [];
-    if (map[r.card_name].length < 2) map[r.card_name].push(r.daily_avg);
+    if (!map[r.apparel_id]) map[r.apparel_id] = [];
+    if (map[r.apparel_id].length < 2) map[r.apparel_id].push(r.da);
   });
   return map;
 }
 
-function fmtChange(pct) {
-  if (pct === null) return '<span class="chg flat">—</span>';
-  const sign = pct >= 0 ? '▲' : '▼';
-  const cls  = pct >= 0 ? 'up' : 'down';
-  return `<span class="chg ${cls}">${sign}${Math.abs(pct).toFixed(1)}%</span>`;
-}
-
 function buildTable() {
-  const dodMap = buildDayOverDayMap();
+  const dodMap = buildDodMap();
 
   const rows = q(`
-    SELECT card_name, rarity, set_name, collection_no, url,
+    SELECT apparel_id, card_name, rarity, set_name, collection_no, url,
       COUNT(*) as cnt, MAX(price) as mx, MIN(price) as mn,
       CAST(AVG(price) AS INT) as avg
     FROM psa10_transactions
-    GROUP BY card_name, rarity, set_name, collection_no, url
+    GROUP BY apparel_id
     ORDER BY avg DESC
   `);
 
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = rows.map(r => {
-    const dod = dodMap[r.card_name];
-    let changePct = null;
-    if (dod && dod.length >= 2) {
-      changePct = (dod[0] - dod[1]) / dod[1] * 100;
-    }
+  tableData = rows.map(r => {
+    const dod = dodMap[r.apparel_id];
+    const dod_pct = (dod && dod.length >= 2)
+      ? (dod[0] - dod[1]) / dod[1] * 100
+      : null;
 
+    // 仕入れ上限: (avg × (1-fee) - shipping) / 1.10
+    const snkr = Math.floor((r.avg * 0.907 - 240) / 1.10);
+    const mcr  = Math.floor((r.avg * 0.900 - 160) / 1.10);
+
+    return { ...r, dod: dod_pct, snkr: snkr > 0 ? snkr : null, mcr: mcr > 0 ? mcr : null };
+  });
+
+  renderTableBody();
+}
+
+function renderTableBody() {
+  const sorted = [...tableData].sort((a, b) => {
+    const va = a[sortCol], vb = b[sortCol];
+    if (va === null && vb === null) return 0;
+    if (va === null) return 1;   // null は常に末尾
+    if (vb === null) return -1;
+    return sortDir * (vb - va);
+  });
+
+  document.getElementById('tableBody').innerHTML = sorted.map(r => {
     const meta = [r.set_name, r.collection_no].filter(Boolean).join(' · ');
+    const dodHtml = r.dod !== null
+      ? `<span class="chg ${r.dod >= 0 ? 'up' : 'down'}">${r.dod >= 0 ? '▲' : '▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
+      : '<span class="chg flat">—</span>';
 
     return `
-      <tr onclick="selectCard('${escJs(r.card_name)}', this)">
+      <tr onclick="selectCard('${escJs(r.apparel_id)}', this)">
         <td>
           <a class="card-link" href="${r.url || '#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name}</a>
           ${meta ? `<div class="card-meta">${meta}</div>` : ''}
         </td>
-        <td>${rarityBadge(r.rarity)}</td>
-        <td style="text-align:right;color:#666">${r.cnt}</td>
-        <td style="text-align:right" class="price-high">${fmt(r.mx)}</td>
-        <td style="text-align:right" class="price-low">${fmt(r.mn)}</td>
-        <td style="text-align:right" class="price-avg">${fmt(r.avg)}</td>
-        <td style="text-align:right">${fmtChange(changePct)}</td>
-      </tr>
-    `;
+        <td style="text-align:center">${rarityBadge(r.rarity)}</td>
+        <td style="color:#666">${r.cnt}</td>
+        <td class="price-high">${fmt(r.mx)}</td>
+        <td class="price-low">${fmt(r.mn)}</td>
+        <td class="price-avg">${fmt(r.avg)}</td>
+        <td>${dodHtml}</td>
+        <td class="buy-price">${r.snkr ? fmt(r.snkr) : '<span style="color:var(--text3)">—</span>'}</td>
+        <td class="buy-price">${r.mcr  ? fmt(r.mcr)  : '<span style="color:var(--text3)">—</span>'}</td>
+      </tr>`;
   }).join('');
 }
 
-function escJs(s) { return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+function setSort(col) {
+  if (sortCol === col) {
+    sortDir = -sortDir;
+  } else {
+    sortCol = col;
+    sortDir = -1;
+  }
+  // ヘッダーの見た目を更新
+  ['cnt','mx','mn','avg','dod'].forEach(c => {
+    const th = document.getElementById('th-' + c);
+    const si = document.getElementById('si-' + c);
+    if (c === col) {
+      th.classList.add('sort-active');
+      si.textContent = sortDir === -1 ? '↓' : '↑';
+    } else {
+      th.classList.remove('sort-active');
+      si.textContent = '';
+    }
+  });
+  renderTableBody();
+}
 
 function buildCardSelect() {
   const cards = q(`
-    SELECT DISTINCT card_name, set_name, collection_no
-    FROM psa10_transactions ORDER BY card_name
+    SELECT apparel_id, card_name, set_name, collection_no
+    FROM psa10_transactions
+    GROUP BY apparel_id
+    ORDER BY card_name
   `);
   document.getElementById('cardSelect').innerHTML = cards.map(c => {
     const meta = [c.set_name, c.collection_no].filter(Boolean).join(' · ');
     const label = meta ? `${c.card_name}  [${meta}]` : c.card_name;
-    return `<option value="${c.card_name}">${label}</option>`;
+    return `<option value="${escJs(c.apparel_id)}">${label}</option>`;
   }).join('');
 }
 
-function selectCard(cardName, rowEl) {
-  // テーブル行のハイライト
+function selectCard(apId, rowEl) {
   if (activeRow) activeRow.classList.remove('active');
   rowEl.classList.add('active');
   activeRow = rowEl;
-
-  // セレクトボックスを同期
-  document.getElementById('cardSelect').value = cardName;
-  renderChart(false);
-
-  // チャートへスクロール
+  document.getElementById('cardSelect').value = apId;
+  renderChart();
   document.getElementById('chartPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function renderChart(scrollToChart) {
-  const card = document.getElementById('cardSelect').value;
+function renderChart() {
+  const apId = document.getElementById('cardSelect').value;
+  if (!apId) return;
+
   const rows = q(
-    'SELECT transaction_date, price FROM psa10_transactions WHERE card_name=? ORDER BY transaction_date',
-    [card]
+    'SELECT transaction_date, price FROM psa10_transactions WHERE apparel_id=? ORDER BY transaction_date',
+    [apId]
   );
-  const labels = rows.map(r => r.transaction_date
-    ? r.transaction_date.replace('T', ' ').substring(5, 16)
-    : '');
+  const labels = rows.map(r => (r.transaction_date || '').replace('T',' ').substring(5, 16));
   const prices = rows.map(r => r.price);
 
+  const info = q('SELECT card_name FROM psa10_transactions WHERE apparel_id=? LIMIT 1', [apId])[0];
   const stats = q(
-    'SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg FROM psa10_transactions WHERE card_name=?',
-    [card]
+    'SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg FROM psa10_transactions WHERE apparel_id=?',
+    [apId]
   )[0];
 
   document.getElementById('chartStats').innerHTML = `
     <span style="color:#e05555">高値 ${fmt(stats.mx)}</span>
     <span style="color:#4caf7d">安値 ${fmt(stats.mn)}</span>
-    <span style="color:#f0f0f0;font-weight:600">平均 ${fmt(stats.avg)}</span>
+    <span style="font-weight:600">平均 ${fmt(stats.avg)}</span>
+    <span style="color:var(--text3);font-size:11px">${rows.length}件</span>
   `;
 
   if (chartInst) chartInst.destroy();
@@ -362,7 +379,6 @@ function renderChart(scrollToChart) {
     data: {
       labels,
       datasets: [{
-        label: '取引価格',
         data: prices,
         borderColor: '#e8a020',
         backgroundColor: 'rgba(232,160,32,0.06)',
@@ -397,10 +413,6 @@ function renderChart(scrollToChart) {
       }
     }
   });
-
-  if (scrollToChart) {
-    document.getElementById('chartPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
 }
 
 loadData();
