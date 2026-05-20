@@ -1,335 +1,3 @@
-
-Claudeが応答を完了しました
-data/psa10_database.db
-どうやって開いたら見れますか？
-
-22:47
-SQLiteのDBファイルだね！いくつか方法があるよ。
-
-GUIで見たい場合（おすすめ）
-
-DB Browser for SQLite が一番手軽。無料でWindows/Mac両対応、テーブルをExcelみたいに見れる。 → https://sqlitebrowser.org/
-
-コマンドラインで確認したい場合
-
-sqlite3が入ってれば：
-
-bash
-sqlite3 data/psa10_database.db
-で起動して、.tables でテーブル一覧、SELECT * FROM テーブル名 LIMIT 10; で中身確認できる。
-
-Pythonで開きたい場合
-
-python
-import sqlite3
-import pandas as pd
-
-conn = sqlite3.connect("data/psa10_database.db")
-df = pd.read_sql("SELECT * FROM sqlite_master WHERE type='table'", conn)
-print(df)  # テーブル一覧が出る
-ここにアップロードしてくれたら、中身を読んで一緒に分析もできるよ！ポケカのPSA10データかな？😄
-
-
-psa10_database.db
-db
-
-22:48
-ちょっと待って、スキルを確認してから読み込むね！
-
-
-File-reading skill
-File-reading skill
-SQLiteはdispatch tableにないので、直接Pythonで読み込むね！
-
-
-SQLiteDBの構造を確認
-SQLiteDBの構造を確認
-おー、PSA10の取引データだ！中身が見えたよ。こんな構成になってる。
-
-テーブル：psa10_transactions（105件）
-
-カラム	型	内容
-id	INTEGER	連番
-collected_date	TEXT	データ収集日
-apparel_id	TEXT	SNKRDUNK商品ID
-card_name	TEXT	カード名
-collection_no	TEXT	コレクション番号
-set_name	TEXT	セット名
-rarity	TEXT	レアリティ
-transaction_date	TEXT	取引日時
-price	INTEGER	取引価格（円）
-url	TEXT	SNKRDUNKのURL
-サンプルを見ると、今日（2026-05-20）収集したMEGAドリームex のピカチュウex SARの取引履歴で、直近2件だと103,000円〜112,800円で動いてる感じ。
-
-このデータで何か分析したいことある？価格推移グラフとか、カード別の相場まとめとか、せどりの仕入れ判断ツールとかも作れるよ！
-
-このデータは毎朝4時に更新されていく予定です。
-見える化するためのアプリは作れますか？
-また、蓄積することで分析結果もみえるようにしたい。
-
-22:51
-いいね！要件を整理してから作るね。少し確認させて！
-
-Q: アプリはどこで使いたい？
-A: スマホでも見たい
-
-Q: 分析で特に見たいものは？（複数OK）（該当するものをすべて選択）
-A: カード別の価格推移グラフ, 直近の高値・安値・平均, 仕入れ判断（利益計算）
-
-Q: DBファイルはどう渡す予定？
-A: Github
-
-22:52
-了解！じゃあ全体像を整理してから作るね。
-
-
-ファイルを表示しました, コマンドを実行しました
-ファイルを表示しました, コマンドを実行しました
-データ把握完了！今日1日分だけど、毎日蓄積されていく前提でしっかり設計するね。GitHub連携でDBを読み込む構成で作るよ。
-
-完全に把握した！GitHub連携のダッシュボードアプリを作るよ。
-
-設計方針：
-
-GitHub Raw URLからDBファイルをfetch（毎回最新を読み込む）
-sql.jsでブラウザ内でSQLiteを直接実行
-レスポンシブ対応（スマホOK）
-
-
-完成！機能はこんな感じ。
-
-搭載機能
-
-GitHubのRaw URLを入力するだけで最新DBを読み込み（毎朝4時更新後に手動リロードするだけ）
-サマリーメトリクス（件数・高値・安値・平均・銘柄数・蓄積日数）
-カード別の価格推移グラフ（日付×価格の折れ線）
-カード一覧テーブル（高値・安値・平均を一覧化）
-仕入れ判断ツール（仕入れ値と手数料率を入力→平均/安値売却時の利益を即計算）
-使い方
-
-GitHubのRaw URLはリポジトリでpsa10_database.dbを開いて「Raw」ボタンを押したURLを使ってね。https://raw.githubusercontent.com/ユーザー名/リポジトリ名/main/data/psa10_database.db という形式になるはず。
-
-ただし、GitHubのCORS制限でブラウザから直接fetchできない場合があるよ。その場合は「GitHub Pages経由で公開する」か、DBを毎朝CSVにエクスポートしてRaw URLで参照する形にする必要がある。試してみてエラーが出たら教えて！
-
-まずはGithubにフォルダを作ったらいい？
-
-22:53
-そうそう、まずリポジトリとフォルダ構成を決めるのが先決！
-
-おすすめ構成
-
-psa10-dashboard/          ← リポジトリ名
-├── data/
-│   └── psa10_database.db ← 毎朝4時に上書き更新
-├── index.html            ← ダッシュボード本体
-└── README.md
-手順
-
-GitHubで新しいリポジトリを作成（psa10-dashboardなど）
-data/フォルダを作ってpsa10_database.dbをアップロード
-GitHub Pages を有効化（Settings → Pages → mainブランチの/rootを指定）
-index.htmlとしてダッシュボードを置く
-こうするとCORSの問題も解決して、同じドメインからDBを読み込めるようになるよ。スマホからも https://ユーザー名.github.io/psa10-dashboard/ でアクセスできる形になる。
-
-リポジトリ作ったら教えて！index.htmlの中身を一式出力するね。
-
-https://github.com/kibidango-kinako/Randy-sedori-team/blob/main/data/psa10_database.db
-
-23:00
-リポジトリ確認できた！構成バッチリだね。
-
-index.htmlとして置くファイルを今すぐ作るよ。
-
-
-Frontend-design skill
-Frontend-design skill
-Raw URLが確定したので、DBのURLは： https://raw.githubusercontent.com/kibidango-kinako/Randy-sedori-team/main/data/psa10_database.db
-
-これをハードコード済みのindex.htmlを作るね！
-
-
-ファイルを作成しました, ファイルを読み取りました
-ファイルを作成しました, ファイルを読み取りました
-できた！次の手順でGitHubに置けばOK。
-
-GitHubへの設置手順
-
-ダウンロードした index.html をリポジトリのルートにアップロード
-Settings → Pages → Source を Deploy from a branch → main / / (root) に設定して保存
-数分後に https://kibidango-kinako.github.io/Randy-sedori-team/ でアクセスできるようになる
-毎朝4時の自動更新について
-
-DBを上書きアップロードするたびにGitHub Pagesが自動で再デプロイされるので、ページを開いて「更新」ボタンを押すだけで最新データが反映される。キャッシュバイパス（?t=タイムスタンプ）も仕込んであるので、古いデータが残ることもないよ！
-
-GitHub Actionsで毎朝自動でDBをコミットするスクリプトも作れるけど、必要になったら言ってね。
-
-
-Index
-コード · HTML 
-データの取得に失敗しました。GitHubのリポジトリ設定を確認してください。って出てますよ
-
-23:08
-GitHubのCORS制限が原因だと思う！raw.githubusercontent.comは直接fetchできないことがある。
-
-まず状況を確認させて。
-
-
-ウェブを検索しました
-ウェブを検索しました
-リポジトリがプライベート設定になってると思う！確認してほしいのが2点。
-
-① リポジトリをPublicにする
-
-Settings → General → Danger Zone → Change repository visibility → Public に変更
-
-② GitHub Pagesを有効化する
-
-Settings → Pages → Source を Deploy from a branch → main / / (root) → Save
-
-Publicにするとraw.githubusercontent.comからのfetchが通るようになるよ。確認できたら教えて！
-
-プライベート設定にしていないと、全世界に共有されてしまわない？
-
-23:09
-そうそう、その感覚は正しい！全世界に公開されるのはちょっと困るよね。
-
-解決策は3つあるよ。
-
-① GitHub Pagesだけ使ってDBは非公開にする（おすすめ）
-
-リポジトリはPrivateのまま、DBファイルだけ別の方法で渡す。具体的には毎朝のスクリプトでDBをCSVに変換してから、Google DriveやDropboxの共有リンクに置く方法。ダッシュボード側でそこを読みに行く形にできる。
-
-② Netlify / Vercel にデプロイする（少し手間だけど完璧）
-
-GitHubと連携してPrivateリポジトリのままデプロイできるサービス。URLにパスワード保護もかけられる。
-
-③ ローカルで開く（一番シンプル）
-
-index.htmlをPC/スマホに持っておいて、DBファイルを毎朝ダウンロードして手動で読み込む形。でもこれだとせっかくの自動化が…って感じになる。
-
-りょーさんの使い方的には①のGoogle Drive経由が一番スムーズかな。毎朝のスクリプトで psa10_database.db → psa10_data.json に変換してDriveに上書き保存、ダッシュボードはそのURLを読みに行く構成。
-
-どれが良さそう？
-
-OAuth トークンは有料？
-
-23:30
-無料で使えるよ！
-
-Google Drive API（OAuth）は無料枠で十分
-
-個人利用レベルなら完全無料。具体的には1日あたり10億リクエストまで無料枠があるので、毎朝1回の書き込み＋数回の読み込みなら全然余裕。
-
-ただ、OAuthのセットアップがちょっと手間なんだよね。Google Cloud Consoleでプロジェクト作って、認証情報を発行して…って手順が10〜15ステップくらいある。
-
-実はもっと簡単な方法があって、Google Driveの「リンクを知っている全員が閲覧可能」設定にしたJSONファイルを使う方法。OAuthなしで読み込める。
-
-流れはこう。
-
-毎朝のスクリプトでDBをJSONに変換 → Google Driveに手動 or 自動アップロード → ダッシュボードがそのURLをfetch
-
-DBの中身（価格データ）が見られても困る情報じゃないなら、これが一番手軽だよ。氏名や個人情報は入ってないしね。
-
-どうする？セットアップの手軽さ優先でいくなら、このJSON＋Drive公開リンク方式で進めようか？
-
-毎日のスクリプトが Drive に自動アップロードするには OAuth トークンが必要です。
-ってAIから回答があったけど？
-
-23:30
-ごめん、その通り！さっきの説明が不正確だったね。
-
-自動アップロードにはOAuthトークンが必要。ただし無料なのは変わらない。
-
-改めて整理すると選択肢は2つ。
-
-① OAuthトークンを取得して完全自動化 Google Cloud Console で無料発行できる。手順が15ステップくらいあるけど一度やれば毎朝全自動。
-
-② GitHub Pagesで割り切って公開リポジトリにする 価格データだけのDBなら個人情報ゼロなので、実害はほぼない。リポジトリ名を推測しにくいものにしておけば実質誰も見つけない。
-
-個人的には②が断然ラクだと思う。psa10_database.dbに入ってるのはSNKRDUNKの公開取引データだから、万が一誰かに見られても何も困らないよね？
-
-どっちで進める？
-
-https://kibidango-kinako.github.io/price-tracker/
-最新のものに更新して
-
-23:57
-ちょっと待って、現在のindex.htmlを確認してから更新するね！
-
-
-Fetched: RandY | PSA10取引ダッシュボード
-Fetched: RandY | PSA10取引ダッシュボード
-別のリポジトリ（price-tracker）があるんだね！DBのURLも変わってるはずだから確認するね。
-
-
-ウェブを検索しました
-ウェブを検索しました
-ソースが直接読めないので確認させて！
-
-price-trackerリポジトリの構成を教えて。
-
-特に知りたいのはこの2点：
-
-DBファイルのパス（例：data/psa10_database.db など）
-GitHubのリポジトリURL（https://github.com/kibidango-kinako/price-tracker で合ってる？）
-それがわかれば、さっき作ったindex.htmlのDB URLを差し替えてすぐ出力するよ！
-
-OK
-
-23:58
-じゃあDBのURLは https://raw.githubusercontent.com/kibidango-kinako/price-tracker/main/data/psa10_database.db で進めるね！
-
-
-コマンドを実行しました, ファイルを編集しました, ファイルを読み取りました
-コマンドを実行しました, ファイルを編集しました, ファイルを読み取りました
-できた！このindex.htmlをprice-trackerリポジトリのルートに上書きアップロードしてね。
-
-リポジトリがPublicになっていれば、数分後に https://kibidango-kinako.github.io/price-tracker/ でそのまま動くはず！
-
-
-Index
-コード · HTML 
-次にどうしたらいいか、わかりやすく丁寧に教えて
-
-0:00
-わかった！ステップごとに丁寧に説明するね。
-
-ステップ1：リポジトリをPublicにする
-まず price-tracker リポジトリをPublicにしないとDBが読み込めないので、これが最初の作業。
-
-https://github.com/kibidango-kinako/price-tracker を開く
-上のタブから Settings をクリック
-一番下までスクロールして Danger Zone を探す
-Change repository visibility をクリック
-Change to public を選んで、リポジトリ名（price-tracker）を入力して確定
-ステップ2：index.htmlをアップロードする
-https://github.com/kibidango-kinako/price-tracker を開く
-すでに index.html があれば、それをクリックして開く
-右上の**鉛筆アイコン（Edit）**をクリック
-全部選択（Ctrl+A）して削除
-さっきダウンロードした新しい index.html の中身を全部貼り付け
-右上の Commit changes ボタンを押して保存
-もし index.html がまだなければ、Add file → Upload files から直接ファイルをアップロードでもOK。
-
-ステップ3：GitHub Pagesを有効にする
-Settings → 左メニューの Pages をクリック
-Source を Deploy from a branch に設定
-Branch を main / / (root) に設定
-Save を押す
-ステップ4：動作確認
-数分待ってから https://kibidango-kinako.github.io/price-tracker/ を開いてみて。データが表示されれば完成！
-
-どのステップで詰まっても気軽に聞いてね😊
-
-
-
-
-
-
-Claude は AI のため、誤りを含む可能性があります。回答内容は必ずご確認ください。
-Index · HTML
-コピー
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -357,7 +25,7 @@ Index · HTML
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', 'Hiragino Sans', sans-serif; min-height: 100vh; }
- 
+
   /* Header */
   .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .header-left { display: flex; align-items: center; gap: 10px; }
@@ -372,10 +40,10 @@ Index · HTML
   #statusText { font-size: 12px; color: var(--text2); }
   .reload-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 6px 12px; border-radius: var(--radius); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background .15s; }
   .reload-btn:hover { background: var(--border); }
- 
+
   /* Layout */
   .container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
- 
+
   /* Metrics */
   .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
   .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
@@ -384,7 +52,7 @@ Index · HTML
   .metric .m-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
   .metric.accent { border-color: var(--accent2); }
   .metric.accent .m-val { color: var(--accent); }
- 
+
   /* Tabs */
   .tabs { display: flex; gap: 2px; margin-bottom: 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; }
   .tab { flex: 1; padding: 8px 10px; background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; border-radius: 7px; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 5px; }
@@ -392,18 +60,18 @@ Index · HTML
   .tab:hover:not(.active) { color: var(--text); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
- 
+
   /* Card */
   .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; }
   .card-title { font-size: 12px; color: var(--text2); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
- 
+
   /* Select */
   select { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 8px 12px; border-radius: var(--radius); font-size: 13px; width: 100%; margin-bottom: 12px; cursor: pointer; }
   select:focus { outline: none; border-color: var(--accent2); }
- 
+
   /* Chart */
   .chart-wrap { position: relative; width: 100%; height: 240px; }
- 
+
   /* Table */
   .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
@@ -420,7 +88,7 @@ Index · HTML
   .price-high { color: var(--red); font-weight: 500; }
   .price-low { color: var(--green); font-weight: 500; }
   .price-avg { color: var(--text); font-weight: 600; }
- 
+
   /* Profit calc */
   .form-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
   .form-row label { font-size: 12px; color: var(--text2); min-width: 72px; }
@@ -435,14 +103,14 @@ Index · HTML
   .pr-val.neg { color: var(--red); }
   .pr-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
   .ref-row { font-size: 11px; color: var(--text3); margin-top: 10px; line-height: 1.8; }
- 
+
   /* Loading / empty */
   .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 14px; }
   .loading-state .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-state p { font-size: 13px; color: var(--text2); }
   .empty { padding: 40px 20px; text-align: center; font-size: 13px; color: var(--text3); }
- 
+
   /* Mobile adjustments */
   @media (max-width: 480px) {
     .metrics { grid-template-columns: repeat(3, 1fr); }
@@ -455,7 +123,7 @@ Index · HTML
 </style>
 </head>
 <body>
- 
+
 <div class="header">
   <div class="header-left">
     <h1>PSA10 相場</h1>
@@ -467,22 +135,22 @@ Index · HTML
     <button class="reload-btn" onclick="loadData()"><i class="ti ti-refresh"></i> 更新</button>
   </div>
 </div>
- 
+
 <div class="container">
   <div id="loadingView" class="loading-state">
     <div class="spinner"></div>
     <p>データを取得しています...</p>
   </div>
- 
+
   <div id="mainView" style="display:none">
     <div class="metrics" id="metrics"></div>
- 
+
     <div class="tabs">
       <button class="tab active" onclick="switchTab('chart',this)"><i class="ti ti-chart-line"></i> 価格推移</button>
       <button class="tab" onclick="switchTab('table',this)"><i class="ti ti-layout-list"></i> 相場一覧</button>
       <button class="tab" onclick="switchTab('profit',this)"><i class="ti ti-calculator"></i> 仕入れ判断</button>
     </div>
- 
+
     <!-- 価格推移 -->
     <div id="tab-chart" class="tab-panel active">
       <div class="card">
@@ -494,7 +162,7 @@ Index · HTML
         </div>
       </div>
     </div>
- 
+
     <!-- 相場一覧 -->
     <div id="tab-table" class="tab-panel">
       <div class="card">
@@ -516,13 +184,13 @@ Index · HTML
         </div>
       </div>
     </div>
- 
+
     <!-- 仕入れ判断 -->
     <div id="tab-profit" class="tab-panel">
       <div class="card">
         <div class="card-title"><i class="ti ti-cards"></i> 対象カード</div>
         <select id="profitCard" onchange="calcProfit()"></select>
- 
+
         <div class="form-row">
           <label>仕入れ値</label>
           <input type="number" id="buyPrice" placeholder="90000" oninput="calcProfit()">
@@ -533,26 +201,26 @@ Index · HTML
           <input type="number" id="feeRate" value="10" min="0" max="30" step="0.5" oninput="calcProfit()">
           <span class="unit">%（SNKRDUNK 約10%）</span>
         </div>
- 
+
         <div id="profitResult"></div>
       </div>
     </div>
   </div>
 </div>
- 
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const DB_URL = 'https://raw.githubusercontent.com/kibidango-kinako/price-tracker/main/data/psa10_database.db';
 let db = null;
 let chartInst = null;
- 
+
 function setStatus(msg, state) {
   document.getElementById('statusText').textContent = msg;
   const dot = document.getElementById('dot');
   dot.className = 'status-dot ' + state;
 }
- 
+
 async function loadData() {
   setStatus('読み込み中...', 'loading');
   document.getElementById('loadingView').style.display = 'flex';
@@ -571,16 +239,16 @@ async function loadData() {
     document.getElementById('loadingView').innerHTML = '<p style="color:#e05555;font-size:13px">データの取得に失敗しました。<br>GitHubのリポジトリ設定を確認してください。</p>';
   }
 }
- 
+
 function q(sql, params) {
   const res = db.exec(sql, params || []);
   if (!res.length) return [];
   const { columns, values } = res[0];
   return values.map(r => Object.fromEntries(columns.map((c, i) => [c, r[i]])));
 }
- 
+
 function fmt(v) { return v != null ? '¥' + parseInt(v).toLocaleString() : '—'; }
- 
+
 function buildDashboard() {
   document.getElementById('loadingView').style.display = 'none';
   document.getElementById('mainView').style.display = 'block';
@@ -589,7 +257,7 @@ function buildDashboard() {
   buildTable();
   renderChart();
 }
- 
+
 function buildMetrics() {
   const r = q('SELECT COUNT(*) as cnt, MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(DISTINCT card_name) as cards, COUNT(DISTINCT collected_date) as days FROM psa10_transactions')[0];
   document.getElementById('metrics').innerHTML = `
@@ -601,27 +269,27 @@ function buildMetrics() {
     <div class="metric"><div class="m-label">蓄積日数</div><div class="m-val">${r.days}</div><div class="m-sub">日分</div></div>
   `;
 }
- 
+
 function buildCardSelects() {
   const cards = q('SELECT DISTINCT card_name FROM psa10_transactions ORDER BY card_name');
   const opts = cards.map(c => `<option value="${c.card_name}">${c.card_name}</option>`).join('');
   document.getElementById('cardSelect').innerHTML = opts;
   document.getElementById('profitCard').innerHTML = opts;
 }
- 
+
 function renderChart() {
   const card = document.getElementById('cardSelect').value;
   const rows = q('SELECT transaction_date, price FROM psa10_transactions WHERE card_name=? ORDER BY transaction_date', [card]);
   const labels = rows.map(r => r.transaction_date ? r.transaction_date.substring(0,10) : '');
   const prices = rows.map(r => r.price);
- 
+
   const stats = q('SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg FROM psa10_transactions WHERE card_name=?', [card])[0];
   document.getElementById('chartStats').innerHTML = `
     <span style="font-size:12px;color:#e05555">高値 ${fmt(stats.mx)}</span>
     <span style="font-size:12px;color:#4caf7d">安値 ${fmt(stats.mn)}</span>
     <span style="font-size:12px;color:#f0f0f0;font-weight:600">平均 ${fmt(stats.avg)}</span>
   `;
- 
+
   if (chartInst) chartInst.destroy();
   chartInst = new Chart(document.getElementById('priceChart'), {
     type: 'line',
@@ -655,7 +323,7 @@ function renderChart() {
     }
   });
 }
- 
+
 function buildTable() {
   const rows = q('SELECT card_name, rarity, COUNT(*) as cnt, MAX(price) as mx, MIN(price) as mn, CAST(AVG(price) AS INT) as avg FROM psa10_transactions GROUP BY card_name, rarity ORDER BY avg DESC');
   const badge = r => {
@@ -673,19 +341,19 @@ function buildTable() {
     </tr>
   `).join('');
 }
- 
+
 function calcProfit() {
   const card = document.getElementById('profitCard').value;
   const buy = parseInt(document.getElementById('buyPrice').value) || 0;
   const fee = parseFloat(document.getElementById('feeRate').value) || 10;
   if (!card || !buy) { document.getElementById('profitResult').innerHTML = '<div class="ref-row">仕入れ値を入力してください</div>'; return; }
- 
+
   const r = q('SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM psa10_transactions WHERE card_name=?', [card])[0];
   const net = v => Math.round(v * (1 - fee / 100));
   const profit = v => net(v) - buy;
   const sign = v => v >= 0 ? '+' : '';
   const cls = v => v >= 0 ? 'pos' : 'neg';
- 
+
   document.getElementById('profitResult').innerHTML = `
     <div class="profit-results">
       <div class="pr-item">
@@ -707,7 +375,7 @@ function calcProfit() {
     <div class="ref-row">参考: ${r.cnt}件の取引データ ／ 高値 ${fmt(r.mx)} ／ 安値 ${fmt(r.mn)} ／ 平均 ${fmt(r.avg)}</div>
   `;
 }
- 
+
 function switchTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -715,9 +383,8 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'chart') renderChart();
 }
- 
+
 loadData();
 </script>
 </body>
 </html>
- 
