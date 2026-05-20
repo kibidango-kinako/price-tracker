@@ -134,12 +134,7 @@
 
   <script>
     // ===== 設定 =====
-    // setup_gdrive_auth.py 実行後に data/gdrive_file_id.txt の内容を貼り付けてください
-    const DRIVE_FILE_ID = '1c-71mRvBwgWFncqupKsLG3L_0zmkmDZT';
-
-    const DATA_URL = DRIVE_FILE_ID === 'REPLACE_WITH_FILE_ID'
-      ? null
-      : `https://drive.usercontent.google.com/download?id=${DRIVE_FILE_ID}&export=download&authuser=0`;
+    const DATA_URL = 'https://kibidango-kinako.github.io/price-tracker/psa10_data.json';
 
     // ===== グローバル状態 =====
     let allCards = [];
@@ -156,10 +151,6 @@
 
     // ===== メインロード =====
     async function loadData() {
-      if (!DATA_URL) {
-        showError('DRIVE_FILE_ID が設定されていません。<br>setup_gdrive_auth.py を実行後、docs/index.html の REPLACE_WITH_FILE_ID を実際のIDに書き換えてください。');
-        return;
-      }
       try {
         const res = await fetch(DATA_URL);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
