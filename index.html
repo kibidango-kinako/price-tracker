@@ -16,8 +16,9 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue','Hiragino Sans',sans-serif; min-height: 100vh; }
 
-  .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .header-left { display: flex; align-items: center; gap: 10px; }
+  /* ===== HEADER ===== */
+  .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; gap: 12px; }
+  .header-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
   .header-left h1 { font-size: 16px; font-weight: 600; }
   .badge-live { background: var(--accent); color: #000; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: .06em; }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--text3); }
@@ -26,29 +27,73 @@
   .status-dot.error  { background: var(--red); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
   .header-right { display: flex; align-items: center; gap: 8px; }
-  #statusText { font-size: 12px; color: var(--text2); }
-  .reload-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 6px 12px; border-radius: var(--radius); font-size: 12px; cursor: pointer; }
+  #statusText { font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .reload-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 5px 10px; border-radius: var(--radius); font-size: 12px; cursor: pointer; white-space: nowrap; }
   .reload-btn:hover { background: var(--border2); }
 
-  .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
-
-  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; }
+  /* ===== LAYOUT ===== */
+  .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
   .section-title { font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
 
-  select { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 7px 10px; border-radius: var(--radius); font-size: 12px; cursor: pointer; width: 100%; margin-bottom: 12px; }
-  select:focus { outline: none; border-color: var(--accent2); }
+  /* ===== SEARCH & FILTER BAR ===== */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
+  .search-input {
+    flex: 1; min-width: 180px;
+    background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+    padding: 7px 10px 7px 32px; border-radius: var(--radius); font-size: 13px;
+    outline: none; transition: border-color .15s;
+  }
+  .search-input:focus { border-color: var(--accent2); }
+  .search-wrap { position: relative; flex: 1; min-width: 180px; }
+  .search-wrap::before {
+    content: '🔍'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; pointer-events: none;
+  }
+  .filter-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .chip {
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border2); background: var(--bg3); color: var(--text2);
+    transition: all .15s; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--accent2); color: var(--text); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #000; }
+  .result-count { font-size: 12px; color: var(--text3); white-space: nowrap; }
 
-  .chart-stats { display: flex; gap: 20px; margin-bottom: 12px; flex-wrap: wrap; }
-  .chart-stats span { font-size: 12px; }
+  /* ===== CHART PANEL ===== */
+  .chart-card-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; min-height: 20px; }
+  .chart-select-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .chart-select-wrap { position: relative; flex: 1; }
+  .chart-select-wrap::before {
+    content: '🔍'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; pointer-events: none; z-index: 1;
+  }
+  #chartSearchInput {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+    padding: 7px 10px 7px 32px; border-radius: var(--radius); font-size: 12px;
+    outline: none; transition: border-color .15s;
+  }
+  #chartSearchInput:focus { border-color: var(--accent2); }
+  select {
+    background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+    padding: 7px 10px; border-radius: var(--radius); font-size: 12px; cursor: pointer;
+    width: 100%; outline: none;
+  }
+  select:focus { border-color: var(--accent2); }
+  .chart-stats { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .chart-stats .stat { font-size: 12px; }
+  .chart-stats .stat-label { font-size: 10px; color: var(--text3); margin-right: 3px; }
   .chart-wrap { position: relative; width: 100%; height: 240px; }
 
-  .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 860px; }
+  /* ===== TABLE ===== */
+  .tbl-outer { overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: 60vh; border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 780px; }
+  thead { position: sticky; top: 0; z-index: 10; background: var(--bg2); }
   th {
-    padding: 8px 10px; border-bottom: 1px solid var(--border);
+    padding: 8px 10px; border-bottom: 2px solid var(--border2);
     font-size: 10px; color: var(--text2); font-weight: 500;
     text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
-    text-align: right; user-select: none;
+    text-align: right; user-select: none; background: var(--bg2);
   }
   th:first-child { text-align: left; }
   th.sortable { cursor: pointer; }
@@ -56,12 +101,13 @@
   th.sort-active { color: var(--accent); }
   th .sort-icon { margin-left: 3px; font-size: 10px; }
 
-  td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; text-align: right; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; text-align: right; }
   td:first-child { text-align: left; }
   tr:last-child td { border-bottom: none; }
   tbody tr { cursor: pointer; transition: background .1s; }
-  tbody tr:hover td { background: rgba(255,255,255,.025); }
-  tbody tr.active td { background: rgba(232,160,32,.07); }
+  tbody tr:hover td { background: rgba(255,255,255,.03); }
+  tbody tr.active td { background: rgba(232,160,32,.08); }
+  tbody tr.active .card-link { color: var(--accent); }
 
   .card-link { color: var(--text); text-decoration: none; font-size: 12px; font-weight: 500; line-height: 1.4; }
   .card-link:hover { color: var(--accent); text-decoration: underline; }
@@ -72,6 +118,7 @@
   .r-HR  { background: rgba(224,85,85,.15);  color: var(--red);    border: 1px solid rgba(224,85,85,.3); }
   .r-SR  { background: rgba(91,156,246,.15); color: var(--blue);   border: 1px solid rgba(91,156,246,.3); }
   .r-MA  { background: rgba(76,175,125,.15); color: var(--green);  border: 1px solid rgba(76,175,125,.3); }
+  .r-MUR { background: rgba(200,100,246,.15); color: #d080f6; border: 1px solid rgba(200,100,246,.3); }
   .r-other { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
 
   .price-avg { font-weight: 600; }
@@ -81,10 +128,33 @@
   .chg.flat { color: var(--text3); }
   .buy-price { font-size: 11px; color: var(--text2); }
 
+  /* ===== LOADING ===== */
   .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; gap: 14px; }
   .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-state p { font-size: 13px; color: var(--text2); }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+
+  /* ===== SCROLL TO TOP ===== */
+  #scrollTopBtn {
+    position: fixed; bottom: 20px; right: 20px; z-index: 300;
+    background: var(--accent); color: #000; border: none;
+    width: 38px; height: 38px; border-radius: 50%; font-size: 16px;
+    cursor: pointer; display: none; align-items: center; justify-content: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,.4); transition: opacity .2s;
+  }
+  #scrollTopBtn.show { display: flex; }
+  #scrollTopBtn:hover { background: var(--accent2); }
+
+  /* ===== MOBILE ===== */
+  @media (max-width: 600px) {
+    .header { padding: 10px 12px; }
+    .container { padding: 10px; }
+    .hide-mobile { display: none !important; }
+    td, th { padding: 6px 6px; }
+  }
 </style>
 </head>
 <body>
@@ -109,10 +179,16 @@
 
   <div id="mainView" style="display:none">
 
-    <!-- 価格推移 -->
+    <!-- 価格推移チャート -->
     <div class="panel" id="chartPanel">
       <div class="section-title">価格推移 (PSA10)</div>
-      <select id="cardSelect" onchange="renderChart()"></select>
+      <div class="chart-card-name" id="chartCardName"></div>
+      <div class="chart-select-row">
+        <div class="chart-select-wrap" style="flex:1">
+          <input type="text" id="chartSearchInput" placeholder="チャートのカードを検索...">
+        </div>
+      </div>
+      <select id="cardSelect" onchange="onSelectChange()" size="1"></select>
       <div class="chart-stats" id="chartStats"></div>
       <div class="chart-wrap">
         <canvas id="priceChart"></canvas>
@@ -122,28 +198,41 @@
     <!-- 相場一覧 -->
     <div class="panel">
       <div class="section-title">相場一覧 (PSA10)</div>
-      <div class="tbl-wrap">
+
+      <!-- フィルターバー -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <input class="search-input" type="text" id="tableSearch" placeholder="カード名・弾名で絞り込み">
+        </div>
+        <div class="filter-chips" id="rarityChips"></div>
+        <span class="result-count" id="resultCount"></span>
+      </div>
+
+      <div class="tbl-outer">
         <table>
           <thead>
             <tr>
-              <th style="text-align:left">カード名 / 弾・No.</th>
-              <th>レア</th>
+              <th style="text-align:left;min-width:160px">カード名 / 弾・No.</th>
+              <th style="min-width:50px">レア</th>
               <th class="sortable" onclick="setSort('rank')" id="th-rank">ランク<span class="sort-icon" id="si-rank"></span></th>
               <th class="sortable" onclick="setSort('cnt')" id="th-cnt">件数<span class="sort-icon" id="si-cnt"></span></th>
               <th class="sortable" onclick="setSort('mx')" id="th-mx">高値<span class="sort-icon" id="si-mx"></span></th>
               <th class="sortable" onclick="setSort('mn')" id="th-mn">安値<span class="sort-icon" id="si-mn"></span></th>
               <th class="sortable" onclick="setSort('avg')" id="th-avg">平均<span class="sort-icon" id="si-avg"></span></th>
               <th class="sortable sort-active" onclick="setSort('dod')" id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
-              <th title="スニダン (手数料9.3%+送料¥240) で利益率10%になる仕入れ上限">仕入判断<br><span style="font-weight:400;text-transform:none;font-size:10px">SNKRDUNK</span></th>
-              <th title="メルカリ (手数料10%+送料¥160) で利益率10%になる仕入れ上限">仕入判断<br><span style="font-weight:400;text-transform:none;font-size:10px">メルカリ</span></th>
+              <th class="hide-mobile" title="スニダン (手数料9.3%+送料¥240) で利益率10%になる仕入れ上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
+              <th class="hide-mobile" title="メルカリ (手数料10%+送料¥160) で利益率10%になる仕入れ上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
+        <div id="emptyState" class="empty-state" style="display:none">該当するカードが見つかりません</div>
       </div>
     </div>
   </div>
 </div>
+
+<button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="トップへ">↑</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -153,14 +242,19 @@ let db = null;
 let chartInst = null;
 let activeRow = null;
 let tableData = [];
+let allOptions = [];   // {value, text, cardName, setName} for chart select
 let sortCol = 'dod';
 let sortDir = -1;
+let filterRarity = 'all';
+let filterText = '';
 
+// ===== STATUS =====
 function setStatus(msg, state) {
   document.getElementById('statusText').textContent = msg;
   document.getElementById('dot').className = 'status-dot ' + state;
 }
 
+// ===== LOAD =====
 async function loadData() {
   setStatus('読み込み中...', 'loading');
   document.getElementById('loadingView').style.display = 'flex';
@@ -191,19 +285,21 @@ const fmt = v => v != null && v > 0 ? '¥' + parseInt(v).toLocaleString() : '—
 const escJs = s => (s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
 function rarityBadge(r) {
-  const cls = ['SAR','HR','SR','MA'].includes(r) ? 'r-' + r : 'r-other';
+  const known = ['SAR','HR','SR','MA','MUR'];
+  const cls = known.includes(r) ? 'r-' + r : 'r-other';
   return `<span class="rarity ${cls}">${r || '—'}</span>`;
 }
 
+// ===== BUILD =====
 function buildDashboard() {
   document.getElementById('loadingView').style.display = 'none';
   document.getElementById('mainView').style.display = 'block';
   buildTable();
   buildCardSelect();
+  buildRarityChips();
   renderChart();
 }
 
-// 前日比マップ: apparel_id -> [最新日avg, 前日avg]
 function buildDodMap() {
   const rows = q(`
     SELECT apparel_id, collected_date, CAST(AVG(price) AS INT) as da
@@ -244,8 +340,22 @@ function buildTable() {
   renderTableBody();
 }
 
+function getFilteredData() {
+  return tableData.filter(r => {
+    const text = filterText.trim().toLowerCase();
+    if (text) {
+      const haystack = ((r.card_name || '') + ' ' + (r.set_name || '') + ' ' + (r.collection_no || '')).toLowerCase();
+      if (!haystack.includes(text)) return false;
+    }
+    if (filterRarity !== 'all' && r.rarity !== filterRarity) return false;
+    return true;
+  });
+}
+
 function renderTableBody() {
-  const sorted = [...tableData].sort((a, b) => {
+  const filtered = getFilteredData();
+
+  const sorted = [...filtered].sort((a, b) => {
     const va = a[sortCol], vb = b[sortCol];
     if (sortCol === 'rank') {
       if (!va && !vb) return 0;
@@ -257,13 +367,26 @@ function renderTableBody() {
     return sortDir * (vb - va);
   });
 
+  const total = tableData.length;
+  document.getElementById('resultCount').textContent =
+    filtered.length < total ? `${filtered.length} / ${total} 件` : `全 ${total} 件`;
+
+  const empty = document.getElementById('emptyState');
+  if (sorted.length === 0) {
+    document.getElementById('tableBody').innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
   document.getElementById('tableBody').innerHTML = sorted.map(r => {
     const meta = [r.set_name, r.collection_no].filter(Boolean).join(' · ');
     const dodHtml = r.dod !== null
       ? `<span class="chg ${r.dod >= 0 ? 'up' : 'down'}">${r.dod >= 0 ? '▲' : '▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
       : '<span class="chg flat">—</span>';
+    const isActive = activeRow && activeRow.dataset.apid === String(r.apparel_id);
     return `
-      <tr onclick="selectCard('${escJs(r.apparel_id)}', this)">
+      <tr onclick="selectCard('${escJs(r.apparel_id)}', this)" data-apid="${r.apparel_id}"${isActive ? ' class="active"' : ''}>
         <td>
           <a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name||'—'}</a>
           ${meta ? `<div class="card-meta">${meta}</div>` : ''}
@@ -275,8 +398,8 @@ function renderTableBody() {
         <td style="color:var(--green)">${fmt(r.mn)}</td>
         <td class="price-avg">${fmt(r.avg)}</td>
         <td>${dodHtml}</td>
-        <td class="buy-price">${r.snkr ? fmt(r.snkr) : '<span style="color:var(--text3)">—</span>'}</td>
-        <td class="buy-price">${r.mcr  ? fmt(r.mcr)  : '<span style="color:var(--text3)">—</span>'}</td>
+        <td class="buy-price hide-mobile">${r.snkr ? fmt(r.snkr) : '<span style="color:var(--text3)">—</span>'}</td>
+        <td class="buy-price hide-mobile">${r.mcr  ? fmt(r.mcr)  : '<span style="color:var(--text3)">—</span>'}</td>
       </tr>`;
   }).join('');
 }
@@ -291,6 +414,35 @@ function setSort(col) {
   renderTableBody();
 }
 
+// ===== RARITY CHIPS =====
+function buildRarityChips() {
+  const rarities = [...new Set(tableData.map(r => r.rarity).filter(Boolean))].sort();
+  const container = document.getElementById('rarityChips');
+  const all = document.createElement('button');
+  all.className = 'chip active';
+  all.textContent = 'ALL';
+  all.dataset.rarity = 'all';
+  all.onclick = () => setRarityFilter('all');
+  container.appendChild(all);
+  rarities.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.textContent = r;
+    btn.dataset.rarity = r;
+    btn.onclick = () => setRarityFilter(r);
+    container.appendChild(btn);
+  });
+}
+
+function setRarityFilter(r) {
+  filterRarity = r;
+  document.querySelectorAll('.chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.rarity === r);
+  });
+  renderTableBody();
+}
+
+// ===== CHART SELECT =====
 function buildCardSelect() {
   const cards = q(`
     SELECT apparel_id, card_name, set_name, collection_no, MIN(rank) as rank
@@ -298,22 +450,57 @@ function buildCardSelect() {
     GROUP BY apparel_id
     ORDER BY MIN(rank)
   `);
-  document.getElementById('cardSelect').innerHTML = cards.map(c => {
+  allOptions = cards.map(c => {
     const meta = [c.set_name, c.collection_no].filter(Boolean).join(' · ');
     const label = `#${c.rank||'?'} ${c.card_name}${meta ? '  ['+meta+']' : ''}`;
-    return `<option value="${escJs(c.apparel_id)}">${label}</option>`;
-  }).join('');
+    return { value: String(c.apparel_id), text: label, cardName: c.card_name || '' };
+  });
+  populateSelect(allOptions);
 }
 
+function populateSelect(options) {
+  const sel = document.getElementById('cardSelect');
+  sel.innerHTML = options.map(o =>
+    `<option value="${escJs(o.value)}">${o.text}</option>`
+  ).join('');
+}
+
+function filterChartSelect(q) {
+  const lower = q.toLowerCase().trim();
+  const filtered = lower
+    ? allOptions.filter(o => o.text.toLowerCase().includes(lower))
+    : allOptions;
+  populateSelect(filtered);
+  if (filtered.length > 0) {
+    document.getElementById('cardSelect').value = filtered[0].value;
+    renderChart();
+  }
+}
+
+function onSelectChange() {
+  renderChart();
+}
+
+// ===== CARD SELECT =====
 function selectCard(apId, rowEl) {
   if (activeRow) activeRow.classList.remove('active');
   rowEl.classList.add('active');
   activeRow = rowEl;
-  document.getElementById('cardSelect').value = apId;
-  renderChart();
-  document.getElementById('chartPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // update chart select
+  const sel = document.getElementById('cardSelect');
+  // search in all options
+  const found = allOptions.find(o => o.value === String(apId));
+  if (found) {
+    // show all options first, then select
+    populateSelect(allOptions);
+    document.getElementById('chartSearchInput').value = '';
+    sel.value = String(apId);
+    renderChart();
+    document.getElementById('chartPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
+// ===== CHART =====
 function renderChart() {
   const apId = document.getElementById('cardSelect').value;
   if (!apId) return;
@@ -327,11 +514,15 @@ function renderChart() {
     [apId]
   )[0];
 
+  // Update card name display
+  const opt = allOptions.find(o => o.value === String(apId));
+  document.getElementById('chartCardName').textContent = opt ? opt.cardName : '';
+
   document.getElementById('chartStats').innerHTML = stats ? `
-    <span style="color:#e05555">高値 ${fmt(stats.mx)}</span>
-    <span style="color:#4caf7d">安値 ${fmt(stats.mn)}</span>
-    <span style="font-weight:600">平均 ${fmt(stats.avg)}</span>
-    <span style="color:var(--text3);font-size:11px">${stats.cnt||0}件</span>
+    <span class="stat"><span class="stat-label">高値</span><span style="color:var(--red);font-weight:600">${fmt(stats.mx)}</span></span>
+    <span class="stat"><span class="stat-label">安値</span><span style="color:var(--green);font-weight:600">${fmt(stats.mn)}</span></span>
+    <span class="stat"><span class="stat-label">平均</span><span style="font-weight:700">${fmt(stats.avg)}</span></span>
+    <span class="stat"><span class="stat-label">件数</span><span style="color:var(--text2)">${stats.cnt||0}件</span></span>
   ` : '';
 
   const labels = rows.map(r => (r.transaction_date||'').replace('T',' ').substring(5, 16));
@@ -349,7 +540,7 @@ function renderChart() {
         borderColor: '#e8a020',
         backgroundColor: 'rgba(232,160,32,0.06)',
         borderWidth: 2,
-        pointRadius: 5,
+        pointRadius: prices.length <= 30 ? 5 : 3,
         pointBackgroundColor: '#e8a020',
         pointBorderColor: '#0f0f0f',
         pointBorderWidth: 2,
@@ -374,6 +565,22 @@ function renderChart() {
     }
   });
 }
+
+// ===== EVENT LISTENERS =====
+document.getElementById('tableSearch').addEventListener('input', function() {
+  filterText = this.value;
+  renderTableBody();
+});
+
+document.getElementById('chartSearchInput').addEventListener('input', function() {
+  filterChartSelect(this.value);
+});
+
+// Scroll-to-top button
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scrollTopBtn');
+  btn.classList.toggle('show', window.scrollY > 300);
+});
 
 loadData();
 </script>
