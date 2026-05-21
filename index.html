@@ -6,154 +6,137 @@
 <title>PSA10 相場ダッシュボード</title>
 <style>
   :root {
-    --bg: #0f0f0f; --bg2: #1a1a1a; --bg3: #242424;
-    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
-    --text: #f0f0f0; --text2: #888; --text3: #444;
-    --accent: #e8a020; --accent2: #c47f10;
-    --green: #4caf7d; --red: #e05555; --blue: #5b9cf6;
-    --radius: 10px; --radius-lg: 14px;
+    --bg:#0f0f0f; --bg2:#1a1a1a; --bg3:#242424;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+    --text:#f0f0f0; --text2:#888; --text3:#444;
+    --accent:#e8a020; --accent2:#c47f10;
+    --green:#4caf7d; --red:#e05555; --blue:#5b9cf6;
+    --radius:10px; --radius-lg:14px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue','Hiragino Sans',sans-serif; min-height: 100vh; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue','Hiragino Sans',sans-serif;min-height:100vh;}
 
-  /* ===== HEADER ===== */
-  .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; gap: 12px; }
-  .header-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-  .header-left h1 { font-size: 16px; font-weight: 600; }
-  .badge-live { background: var(--accent); color: #000; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: .06em; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--text3); }
-  .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
-  .status-dot.ok     { background: var(--green); }
-  .status-dot.error  { background: var(--red); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-  .header-right { display: flex; align-items: center; gap: 8px; }
-  #statusText { font-size: 12px; color: var(--text2); white-space: nowrap; }
-  .reload-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 5px 10px; border-radius: var(--radius); font-size: 12px; cursor: pointer; white-space: nowrap; }
-  .reload-btn:hover { background: var(--border2); }
+  /* HEADER */
+  .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;gap:12px;}
+  .header-left{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .header-left h1{font-size:16px;font-weight:600;}
+  .badge-live{background:var(--accent);color:#000;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.06em;}
+  .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--text3);}
+  .status-dot.loading{background:var(--accent);animation:pulse 1s infinite;}
+  .status-dot.ok{background:var(--green);}
+  .status-dot.error{background:var(--red);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .header-right{display:flex;align-items:center;gap:8px;}
+  #statusText{font-size:12px;color:var(--text2);white-space:nowrap;}
+  .reload-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:var(--radius);font-size:12px;cursor:pointer;white-space:nowrap;}
+  .reload-btn:hover{background:var(--border2);}
 
-  /* ===== LAYOUT ===== */
-  .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
-  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
-  .section-title { font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+  /* LAYOUT */
+  .container{max-width:1200px;margin:0 auto;padding:16px;}
+  .panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;}
+  .section-title{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
 
-  /* ===== SEARCH & FILTER BAR ===== */
-  .filter-bar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
-  .search-input {
-    flex: 1; min-width: 180px;
-    background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
-    padding: 7px 10px 7px 32px; border-radius: var(--radius); font-size: 13px;
-    outline: none; transition: border-color .15s;
-  }
-  .search-input:focus { border-color: var(--accent2); }
-  .search-wrap { position: relative; flex: 1; min-width: 180px; }
-  .search-wrap::before {
-    content: '🔍'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
-    font-size: 12px; pointer-events: none;
-  }
-  .filter-chips { display: flex; gap: 5px; flex-wrap: wrap; }
-  .chip {
-    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;
-    border: 1px solid var(--border2); background: var(--bg3); color: var(--text2);
-    transition: all .15s; white-space: nowrap;
-  }
-  .chip:hover { border-color: var(--accent2); color: var(--text); }
-  .chip.active { background: var(--accent); border-color: var(--accent); color: #000; }
-  .result-count { font-size: 12px; color: var(--text3); white-space: nowrap; }
+  /* CHART SELECT */
+  .chart-card-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;min-height:20px;}
+  .search-select-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+  .search-icon-wrap{position:relative;flex:1;}
+  .search-icon-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;}
+  .chart-search-input,select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 10px 7px 32px;border-radius:var(--radius);font-size:12px;outline:none;transition:border-color .15s;width:100%;}
+  select{padding-left:10px;}
+  .chart-search-input:focus,select:focus{border-color:var(--accent2);}
 
-  /* ===== CHART PANEL ===== */
-  .chart-card-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; min-height: 20px; }
-  .chart-select-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
-  .chart-select-wrap { position: relative; flex: 1; }
-  .chart-select-wrap::before {
-    content: '🔍'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
-    font-size: 12px; pointer-events: none; z-index: 1;
-  }
-  #chartSearchInput {
-    width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
-    padding: 7px 10px 7px 32px; border-radius: var(--radius); font-size: 12px;
-    outline: none; transition: border-color .15s;
-  }
-  #chartSearchInput:focus { border-color: var(--accent2); }
-  select {
-    background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
-    padding: 7px 10px; border-radius: var(--radius); font-size: 12px; cursor: pointer;
-    width: 100%; outline: none;
-  }
-  select:focus { border-color: var(--accent2); }
-  .chart-stats { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
-  .chart-stats .stat { font-size: 12px; }
-  .chart-stats .stat-label { font-size: 10px; color: var(--text3); margin-right: 3px; }
-  .chart-wrap { position: relative; width: 100%; height: 240px; }
+  /* STATS GRID */
+  .stats-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+  .stat-box{background:var(--bg3);border-radius:8px;padding:7px 10px;min-width:90px;flex:1;}
+  .stat-box-label{font-size:10px;color:var(--text3);margin-bottom:2px;white-space:nowrap;}
+  .stat-box-val{font-size:13px;font-weight:700;white-space:nowrap;}
+  .stat-box-sub{font-size:10px;color:var(--text2);margin-top:2px;white-space:nowrap;}
 
-  /* ===== TABLE ===== */
-  .tbl-outer { overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: 60vh; border-radius: var(--radius); }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 780px; }
-  thead { position: sticky; top: 0; z-index: 10; background: var(--bg2); }
-  th {
-    padding: 8px 10px; border-bottom: 2px solid var(--border2);
-    font-size: 10px; color: var(--text2); font-weight: 500;
-    text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
-    text-align: right; user-select: none; background: var(--bg2);
-  }
-  th:first-child { text-align: left; }
-  th.sortable { cursor: pointer; }
-  th.sortable:hover { color: var(--text); }
-  th.sort-active { color: var(--accent); }
-  th .sort-icon { margin-left: 3px; font-size: 10px; }
+  /* SIGNAL BADGE */
+  .signal-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .signal-label-text{font-size:11px;color:var(--text2);}
+  .signal-badge{display:inline-block;padding:3px 12px;border-radius:4px;font-size:13px;font-weight:700;letter-spacing:.03em;}
+  .sig-strong-buy{background:rgba(76,175,125,.2);color:var(--green);border:1px solid rgba(76,175,125,.4);}
+  .sig-buy       {background:rgba(91,156,246,.2);color:var(--blue); border:1px solid rgba(91,156,246,.4);}
+  .sig-neutral   {background:rgba(136,136,136,.2);color:#888;       border:1px solid rgba(136,136,136,.3);}
+  .sig-sell      {background:rgba(232,160,32,.2); color:var(--accent);border:1px solid rgba(232,160,32,.4);}
+  .sig-strong-sell{background:rgba(224,85,85,.2); color:var(--red);  border:1px solid rgba(224,85,85,.4);}
+  .sig-no-data   {background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
+  .signal-score{font-size:11px;color:var(--text3);}
+  .label-toggle-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;transition:all .15s;}
+  .label-toggle-btn.active{border-color:var(--accent);color:var(--accent);}
+  .label-toggle-btn:hover{border-color:var(--accent2);}
 
-  td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; text-align: right; }
-  td:first-child { text-align: left; }
-  tr:last-child td { border-bottom: none; }
-  tbody tr { cursor: pointer; transition: background .1s; }
-  tbody tr:hover td { background: rgba(255,255,255,.03); }
-  tbody tr.active td { background: rgba(232,160,32,.08); }
-  tbody tr.active .card-link { color: var(--accent); }
+  /* CHART */
+  .chart-wrap{position:relative;width:100%;height:260px;}
+  .chart-legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
+  .legend-line{width:20px;height:2px;border-radius:2px;}
+  .legend-dashed{background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 8px);}
 
-  .card-link { color: var(--text); text-decoration: none; font-size: 12px; font-weight: 500; line-height: 1.4; }
-  .card-link:hover { color: var(--accent); text-decoration: underline; }
-  .card-meta { font-size: 10px; color: var(--text3); margin-top: 2px; }
+  /* TABLE FILTER BAR */
+  .filter-bar{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;}
+  .search-wrap{position:relative;flex:1;min-width:180px;}
+  .search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;}
+  .search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 10px 7px 32px;border-radius:var(--radius);font-size:13px;outline:none;transition:border-color .15s;}
+  .search-input:focus{border-color:var(--accent2);}
+  .filter-chips{display:flex;gap:5px;flex-wrap:wrap;}
+  .chip{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap;}
+  .chip:hover{border-color:var(--accent2);color:var(--text);}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#000;}
+  .result-count{font-size:12px;color:var(--text3);white-space:nowrap;}
 
-  .rarity { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; letter-spacing: .03em; white-space: nowrap; }
-  .r-SAR { background: rgba(232,160,32,.15); color: var(--accent); border: 1px solid rgba(232,160,32,.3); }
-  .r-HR  { background: rgba(224,85,85,.15);  color: var(--red);    border: 1px solid rgba(224,85,85,.3); }
-  .r-SR  { background: rgba(91,156,246,.15); color: var(--blue);   border: 1px solid rgba(91,156,246,.3); }
-  .r-MA  { background: rgba(76,175,125,.15); color: var(--green);  border: 1px solid rgba(76,175,125,.3); }
-  .r-MUR { background: rgba(200,100,246,.15); color: #d080f6; border: 1px solid rgba(200,100,246,.3); }
-  .r-other { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  /* TABLE */
+  .tbl-outer{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:62vh;border-radius:var(--radius);}
+  table{width:100%;border-collapse:collapse;font-size:12px;min-width:780px;}
+  thead{position:sticky;top:0;z-index:10;}
+  th{padding:8px 10px;border-bottom:2px solid var(--border2);font-size:10px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;text-align:right;user-select:none;background:var(--bg2);}
+  th:first-child{text-align:left;}
+  th.sortable{cursor:pointer;}
+  th.sortable:hover{color:var(--text);}
+  th.sort-active{color:var(--accent);}
+  th .sort-icon{margin-left:3px;font-size:10px;}
+  td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:right;}
+  td:first-child{text-align:left;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr{cursor:pointer;transition:background .1s;}
+  tbody tr:hover td{background:rgba(255,255,255,.03);}
+  tbody tr.active td{background:rgba(232,160,32,.08);}
+  tbody tr.active .card-link{color:var(--accent);}
+  .card-link{color:var(--text);text-decoration:none;font-size:12px;font-weight:500;line-height:1.4;}
+  .card-link:hover{color:var(--accent);}
+  .card-meta{font-size:10px;color:var(--text3);margin-top:2px;}
+  .rarity{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:.03em;white-space:nowrap;}
+  .r-SAR{background:rgba(232,160,32,.15);color:var(--accent);border:1px solid rgba(232,160,32,.3);}
+  .r-HR {background:rgba(224,85,85,.15); color:var(--red);   border:1px solid rgba(224,85,85,.3);}
+  .r-SR {background:rgba(91,156,246,.15);color:var(--blue);  border:1px solid rgba(91,156,246,.3);}
+  .r-MA {background:rgba(76,175,125,.15);color:var(--green); border:1px solid rgba(76,175,125,.3);}
+  .r-MUR{background:rgba(200,100,246,.15);color:#d080f6;     border:1px solid rgba(200,100,246,.3);}
+  .r-other{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+  .price-avg{font-weight:600;}
+  .chg{font-size:11px;font-weight:700;white-space:nowrap;}
+  .chg.up{color:var(--green);}
+  .chg.down{color:var(--red);}
+  .chg.flat{color:var(--text3);}
+  .buy-price{font-size:11px;color:var(--text2);}
+  .empty-state{text-align:center;padding:40px;color:var(--text3);font-size:13px;}
 
-  .price-avg { font-weight: 600; }
-  .chg { font-size: 11px; font-weight: 700; white-space: nowrap; }
-  .chg.up   { color: var(--green); }
-  .chg.down { color: var(--red); }
-  .chg.flat { color: var(--text3); }
-  .buy-price { font-size: 11px; color: var(--text2); }
+  /* LOADING */
+  .loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;}
+  .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-state p{font-size:13px;color:var(--text2);}
 
-  /* ===== LOADING ===== */
-  .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; gap: 14px; }
-  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-state p { font-size: 13px; color: var(--text2); }
+  /* SCROLL TOP */
+  #scrollTopBtn{position:fixed;bottom:20px;right:20px;z-index:300;background:var(--accent);color:#000;border:none;width:38px;height:38px;border-radius:50%;font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.4);}
+  #scrollTopBtn.show{display:flex;}
 
-  /* ===== EMPTY STATE ===== */
-  .empty-state { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
-
-  /* ===== SCROLL TO TOP ===== */
-  #scrollTopBtn {
-    position: fixed; bottom: 20px; right: 20px; z-index: 300;
-    background: var(--accent); color: #000; border: none;
-    width: 38px; height: 38px; border-radius: 50%; font-size: 16px;
-    cursor: pointer; display: none; align-items: center; justify-content: center;
-    box-shadow: 0 2px 12px rgba(0,0,0,.4); transition: opacity .2s;
-  }
-  #scrollTopBtn.show { display: flex; }
-  #scrollTopBtn:hover { background: var(--accent2); }
-
-  /* ===== MOBILE ===== */
-  @media (max-width: 600px) {
-    .header { padding: 10px 12px; }
-    .container { padding: 10px; }
-    .hide-mobile { display: none !important; }
-    td, th { padding: 6px 6px; }
+  @media(max-width:600px){
+    .header{padding:10px 12px;}
+    .container{padding:10px;}
+    .hide-mobile{display:none!important;}
+    td,th{padding:6px 6px;}
+    .stat-box{min-width:70px;}
   }
 </style>
 </head>
@@ -182,24 +165,31 @@
     <!-- 価格推移チャート -->
     <div class="panel" id="chartPanel">
       <div class="section-title">価格推移 (PSA10)</div>
-      <div class="chart-card-name" id="chartCardName"></div>
-      <div class="chart-select-row">
-        <div class="chart-select-wrap" style="flex:1">
-          <input type="text" id="chartSearchInput" placeholder="チャートのカードを検索...">
+      <div class="chart-card-name" id="chartCardName">—</div>
+
+      <div class="search-select-row">
+        <div class="search-icon-wrap" style="flex:1">
+          <input class="chart-search-input" type="text" id="chartSearchInput" placeholder="カードを検索してチャートを切替...">
         </div>
       </div>
-      <select id="cardSelect" onchange="onSelectChange()" size="1"></select>
-      <div class="chart-stats" id="chartStats"></div>
+      <select id="cardSelect" onchange="onSelectChange()" style="margin-bottom:10px"></select>
+
+      <!-- Row1: 基本stats -->
+      <div class="stats-row" id="statsRow1"></div>
+      <!-- Row2: 24h / 48h 変化 -->
+      <div class="stats-row" id="statsRow2"></div>
+      <!-- Row3: MA値 + シグナル + ラベルボタン -->
+      <div class="signal-row" id="signalRow"></div>
+
       <div class="chart-wrap">
         <canvas id="priceChart"></canvas>
       </div>
+      <div class="chart-legend" id="chartLegend"></div>
     </div>
 
     <!-- 相場一覧 -->
     <div class="panel">
       <div class="section-title">相場一覧 (PSA10)</div>
-
-      <!-- フィルターバー -->
       <div class="filter-bar">
         <div class="search-wrap">
           <input class="search-input" type="text" id="tableSearch" placeholder="カード名・弾名で絞り込み">
@@ -207,21 +197,20 @@
         <div class="filter-chips" id="rarityChips"></div>
         <span class="result-count" id="resultCount"></span>
       </div>
-
       <div class="tbl-outer">
         <table>
           <thead>
             <tr>
               <th style="text-align:left;min-width:160px">カード名 / 弾・No.</th>
-              <th style="min-width:50px">レア</th>
+              <th style="min-width:48px">レア</th>
               <th class="sortable" onclick="setSort('rank')" id="th-rank">ランク<span class="sort-icon" id="si-rank"></span></th>
-              <th class="sortable" onclick="setSort('cnt')" id="th-cnt">件数<span class="sort-icon" id="si-cnt"></span></th>
-              <th class="sortable" onclick="setSort('mx')" id="th-mx">高値<span class="sort-icon" id="si-mx"></span></th>
-              <th class="sortable" onclick="setSort('mn')" id="th-mn">安値<span class="sort-icon" id="si-mn"></span></th>
-              <th class="sortable" onclick="setSort('avg')" id="th-avg">平均<span class="sort-icon" id="si-avg"></span></th>
+              <th class="sortable" onclick="setSort('cnt')"  id="th-cnt">件数<span class="sort-icon" id="si-cnt"></span></th>
+              <th class="sortable" onclick="setSort('mx')"   id="th-mx">高値<span class="sort-icon" id="si-mx"></span></th>
+              <th class="sortable" onclick="setSort('mn')"   id="th-mn">安値<span class="sort-icon" id="si-mn"></span></th>
+              <th class="sortable" onclick="setSort('avg')"  id="th-avg">平均<span class="sort-icon" id="si-avg"></span></th>
               <th class="sortable sort-active" onclick="setSort('dod')" id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
-              <th class="hide-mobile" title="スニダン (手数料9.3%+送料¥240) で利益率10%になる仕入れ上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
-              <th class="hide-mobile" title="メルカリ (手数料10%+送料¥160) で利益率10%になる仕入れ上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
+              <th class="hide-mobile" title="スニダン(手数料9.3%+送料¥240)で利益率10%の仕入上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
+              <th class="hide-mobile" title="メルカリ(手数料10%+送料¥160)で利益率10%の仕入上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -236,27 +225,33 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
+// ===== GLOBALS =====
 const DB_URL = 'https://raw.githubusercontent.com/kibidango-kinako/price-tracker/main/data/ranking_database.db';
-let db = null;
-let chartInst = null;
-let activeRow = null;
-let tableData = [];
-let allOptions = [];   // {value, text, cardName, setName} for chart select
-let sortCol = 'dod';
-let sortDir = -1;
-let filterRarity = 'all';
-let filterText = '';
+let db = null, chartInst = null, activeRow = null;
+let tableData = [], allOptions = [];
+let sortCol = 'dod', sortDir = -1;
+let filterRarity = 'all', filterText = '';
+let showPriceLabels = false;
 
-// ===== STATUS =====
+// ===== UTILS =====
 function setStatus(msg, state) {
   document.getElementById('statusText').textContent = msg;
   document.getElementById('dot').className = 'status-dot ' + state;
 }
+const fmt = v => (v != null && v > 0) ? '¥' + parseInt(v).toLocaleString() : '—';
+const fmtDiff = v => (v >= 0 ? '+¥' : '-¥') + Math.abs(parseInt(v)).toLocaleString();
+const escJs = s => (s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+function rarityBadge(r) {
+  const known = ['SAR','HR','SR','MA','MUR'];
+  const cls = known.includes(r) ? 'r-'+r : 'r-other';
+  return `<span class="rarity ${cls}">${r||'—'}</span>`;
+}
 
 // ===== LOAD =====
 async function loadData() {
-  setStatus('読み込み中...', 'loading');
+  setStatus('読み込み中...','loading');
   document.getElementById('loadingView').style.display = 'flex';
   document.getElementById('mainView').style.display = 'none';
   try {
@@ -264,13 +259,12 @@ async function loadData() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const SQL = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/' + f });
     db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
-    const now = new Date().toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    setStatus(now + ' 更新', 'ok');
+    const now = new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    setStatus(now + ' 更新','ok');
     buildDashboard();
   } catch(e) {
-    setStatus('読み込み失敗', 'error');
-    document.getElementById('loadingView').innerHTML =
-      '<p style="color:#e05555;font-size:13px">データの取得に失敗しました。</p>';
+    setStatus('読み込み失敗','error');
+    document.getElementById('loadingView').innerHTML = '<p style="color:#e05555;font-size:13px">データの取得に失敗しました。</p>';
   }
 }
 
@@ -278,19 +272,65 @@ function q(sql, params) {
   const res = db.exec(sql, params || []);
   if (!res.length) return [];
   const { columns, values } = res[0];
-  return values.map(r => Object.fromEntries(columns.map((c, i) => [c, r[i]])));
+  return values.map(r => Object.fromEntries(columns.map((c,i) => [c, r[i]])));
 }
 
-const fmt = v => v != null && v > 0 ? '¥' + parseInt(v).toLocaleString() : '—';
-const escJs = s => (s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-function rarityBadge(r) {
-  const known = ['SAR','HR','SR','MA','MUR'];
-  const cls = known.includes(r) ? 'r-' + r : 'r-other';
-  return `<span class="rarity ${cls}">${r || '—'}</span>`;
+// ===== MOVING AVERAGES =====
+function calcMA(data, period) {
+  return data.map((_, i) => {
+    if (i < period - 1) return null;
+    const slice = data.slice(i - period + 1, i + 1);
+    return Math.round(slice.reduce((a,b) => a+b, 0) / period);
+  });
 }
 
-// ===== BUILD =====
+// ===== TIME WINDOW CHANGE (24h / 48h) =====
+function getTimeWindowChange(apId, hours) {
+  const maxRes = q('SELECT MAX(transaction_date) as d FROM ranking_transactions WHERE apparel_id=?', [apId]);
+  if (!maxRes.length || !maxRes[0].d) return null;
+  const maxDate = maxRes[0].d;
+  const rows = q(
+    `SELECT price, transaction_date FROM ranking_transactions
+     WHERE apparel_id=? AND transaction_date >= datetime(?, '-${hours} hours')
+     ORDER BY transaction_date ASC`,
+    [apId, maxDate]
+  );
+  if (!rows.length) return { count: 0, diff: null };
+  if (rows.length === 1) return { count: 1, diff: null, price: rows[0].price };
+  const oldest = rows[0].price, newest = rows[rows.length-1].price;
+  const diff = newest - oldest;
+  return { oldest, newest, diff, pct: (diff / oldest) * 100, count: rows.length };
+}
+
+// ===== TREND SIGNAL =====
+function getTrendSignal(prices, ma5, ma10, ma20) {
+  const n = prices.length;
+  if (n === 0) return { signal:'—', cls:'no-data', score:0, maxScore:0, dataPoints:n, lastMA5:null, lastMA10:null, lastMA20:null };
+  const lastPrice = prices[n-1];
+  const lastMA5  = n >= 5  ? ma5[n-1]  : null;
+  const lastMA10 = n >= 10 ? ma10[n-1] : null;
+  const lastMA20 = n >= 20 ? ma20[n-1] : null;
+  let score = 0, maxScore = 0;
+  const add = (cond) => { maxScore++; if (cond) score++; };
+  if (lastMA5  !== null) add(lastPrice > lastMA5);
+  if (lastMA10 !== null) add(lastPrice > lastMA10);
+  if (lastMA20 !== null) add(lastPrice > lastMA20);
+  if (lastMA5  !== null && lastMA10 !== null) add(lastMA5  > lastMA10);
+  if (lastMA10 !== null && lastMA20 !== null) add(lastMA10 > lastMA20);
+  if (lastMA5  !== null && lastMA20 !== null) add(lastMA5  > lastMA20);
+  if (maxScore === 0) return { signal:'データ不足', cls:'no-data', score:0, maxScore:0, dataPoints:n, lastMA5, lastMA10, lastMA20 };
+  const ratio = score / maxScore;
+  let signal, cls;
+  if      (ratio >= 5/6) { signal='強い買い'; cls='strong-buy'; }
+  else if (ratio >= 4/6) { signal='買い';     cls='buy'; }
+  else if (ratio >= 2/6) { signal='中立';     cls='neutral'; }
+  else if (ratio >= 1/6) { signal='売り';     cls='sell'; }
+  else                   { signal='強い売り'; cls='strong-sell'; }
+  const partial = maxScore < 6 ? '（参考）' : '';
+  return { signal: signal+partial, cls, score, maxScore, dataPoints:n, lastMA5, lastMA10, lastMA20 };
+}
+
+// ===== BUILD DASHBOARD =====
 function buildDashboard() {
   document.getElementById('loadingView').style.display = 'none';
   document.getElementById('mainView').style.display = 'block';
@@ -300,13 +340,10 @@ function buildDashboard() {
   renderChart();
 }
 
+// ===== TABLE =====
 function buildDodMap() {
-  const rows = q(`
-    SELECT apparel_id, collected_date, CAST(AVG(price) AS INT) as da
-    FROM ranking_transactions
-    GROUP BY apparel_id, collected_date
-    ORDER BY apparel_id, collected_date DESC
-  `);
+  const rows = q(`SELECT apparel_id, collected_date, CAST(AVG(price) AS INT) as da
+    FROM ranking_transactions GROUP BY apparel_id, collected_date ORDER BY apparel_id, collected_date DESC`);
   const map = {};
   rows.forEach(r => {
     if (!map[r.apparel_id]) map[r.apparel_id] = [];
@@ -317,35 +354,26 @@ function buildDodMap() {
 
 function buildTable() {
   const dodMap = buildDodMap();
-  const rows = q(`
-    SELECT apparel_id, card_name, rarity, set_name, collection_no, url,
-      MIN(rank) as rank,
-      COUNT(*) as cnt,
-      MAX(price) as mx,
-      MIN(price) as mn,
-      CAST(AVG(price) AS INT) as avg,
-      MAX(has_more) as has_more
-    FROM ranking_transactions
-    GROUP BY apparel_id
-  `);
-
+  const rows = q(`SELECT apparel_id, card_name, rarity, set_name, collection_no, url,
+    MIN(rank) as rank, COUNT(*) as cnt, MAX(price) as mx, MIN(price) as mn,
+    CAST(AVG(price) AS INT) as avg, MAX(has_more) as has_more
+    FROM ranking_transactions GROUP BY apparel_id`);
   tableData = rows.map(r => {
     const dod = dodMap[r.apparel_id];
-    const dod_pct = (dod && dod.length >= 2) ? (dod[0] - dod[1]) / dod[1] * 100 : null;
-    const snkr = r.avg > 0 ? Math.floor((r.avg * 0.907 - 240) / 1.10) : null;
-    const mcr  = r.avg > 0 ? Math.floor((r.avg * 0.900 - 160) / 1.10) : null;
-    return { ...r, dod: dod_pct, snkr: snkr > 0 ? snkr : null, mcr: mcr > 0 ? mcr : null };
+    const dod_pct = (dod && dod.length >= 2) ? (dod[0]-dod[1])/dod[1]*100 : null;
+    const snkr = r.avg > 0 ? Math.floor((r.avg*0.907-240)/1.10) : null;
+    const mcr  = r.avg > 0 ? Math.floor((r.avg*0.900-160)/1.10) : null;
+    return { ...r, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null };
   });
-
   renderTableBody();
 }
 
 function getFilteredData() {
   return tableData.filter(r => {
-    const text = filterText.trim().toLowerCase();
-    if (text) {
-      const haystack = ((r.card_name || '') + ' ' + (r.set_name || '') + ' ' + (r.collection_no || '')).toLowerCase();
-      if (!haystack.includes(text)) return false;
+    const txt = filterText.trim().toLowerCase();
+    if (txt) {
+      const h = ((r.card_name||'')+' '+(r.set_name||'')+' '+(r.collection_no||'')).toLowerCase();
+      if (!h.includes(txt)) return false;
     }
     if (filterRarity !== 'all' && r.rarity !== filterRarity) return false;
     return true;
@@ -354,80 +382,61 @@ function getFilteredData() {
 
 function renderTableBody() {
   const filtered = getFilteredData();
-
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = [...filtered].sort((a,b) => {
     const va = a[sortCol], vb = b[sortCol];
     if (sortCol === 'rank') {
-      if (!va && !vb) return 0;
-      if (!va) return 1; if (!vb) return -1;
-      return sortDir === -1 ? va - vb : vb - va;
+      if (!va && !vb) return 0; if (!va) return 1; if (!vb) return -1;
+      return sortDir === -1 ? va-vb : vb-va;
     }
     if (va === null && vb === null) return 0;
     if (va === null) return 1; if (vb === null) return -1;
     return sortDir * (vb - va);
   });
-
-  const total = tableData.length;
   document.getElementById('resultCount').textContent =
-    filtered.length < total ? `${filtered.length} / ${total} 件` : `全 ${total} 件`;
-
+    filtered.length < tableData.length ? `${filtered.length} / ${tableData.length} 件` : `全 ${tableData.length} 件`;
   const empty = document.getElementById('emptyState');
-  if (sorted.length === 0) {
-    document.getElementById('tableBody').innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
+  if (!sorted.length) { document.getElementById('tableBody').innerHTML=''; empty.style.display='block'; return; }
   empty.style.display = 'none';
-
+  const currentApId = activeRow ? activeRow.dataset.apid : null;
   document.getElementById('tableBody').innerHTML = sorted.map(r => {
     const meta = [r.set_name, r.collection_no].filter(Boolean).join(' · ');
     const dodHtml = r.dod !== null
-      ? `<span class="chg ${r.dod >= 0 ? 'up' : 'down'}">${r.dod >= 0 ? '▲' : '▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
+      ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'▲':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
       : '<span class="chg flat">—</span>';
-    const isActive = activeRow && activeRow.dataset.apid === String(r.apparel_id);
-    return `
-      <tr onclick="selectCard('${escJs(r.apparel_id)}', this)" data-apid="${r.apparel_id}"${isActive ? ' class="active"' : ''}>
-        <td>
-          <a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name||'—'}</a>
-          ${meta ? `<div class="card-meta">${meta}</div>` : ''}
-        </td>
-        <td style="text-align:center">${rarityBadge(r.rarity)}</td>
-        <td style="color:var(--text3);font-size:11px">${r.rank ? '#'+r.rank : '—'}</td>
-        <td style="color:var(--blue)">${r.cnt}${r.has_more ? '<sup style="color:var(--accent);font-size:9px;margin-left:1px">+</sup>' : ''}</td>
-        <td style="color:var(--red)">${fmt(r.mx)}</td>
-        <td style="color:var(--green)">${fmt(r.mn)}</td>
-        <td class="price-avg">${fmt(r.avg)}</td>
-        <td>${dodHtml}</td>
-        <td class="buy-price hide-mobile">${r.snkr ? fmt(r.snkr) : '<span style="color:var(--text3)">—</span>'}</td>
-        <td class="buy-price hide-mobile">${r.mcr  ? fmt(r.mcr)  : '<span style="color:var(--text3)">—</span>'}</td>
-      </tr>`;
+    const isActive = String(r.apparel_id) === currentApId;
+    return `<tr onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}"${isActive?' class="active"':''}>
+      <td><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name||'—'}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</td>
+      <td style="text-align:center">${rarityBadge(r.rarity)}</td>
+      <td style="color:var(--text3);font-size:11px">${r.rank?'#'+r.rank:'—'}</td>
+      <td style="color:var(--blue)">${r.cnt}${r.has_more?'<sup style="color:var(--accent);font-size:9px;margin-left:1px">+</sup>':''}</td>
+      <td style="color:var(--red)">${fmt(r.mx)}</td>
+      <td style="color:var(--green)">${fmt(r.mn)}</td>
+      <td class="price-avg">${fmt(r.avg)}</td>
+      <td>${dodHtml}</td>
+      <td class="buy-price hide-mobile">${r.snkr?fmt(r.snkr):'<span style="color:var(--text3)">—</span>'}</td>
+      <td class="buy-price hide-mobile">${r.mcr ?fmt(r.mcr) :'<span style="color:var(--text3)">—</span>'}</td>
+    </tr>`;
   }).join('');
 }
 
 function setSort(col) {
-  sortDir = (sortCol === col) ? -sortDir : (col === 'rank' ? 1 : -1);
+  sortDir = (sortCol === col) ? -sortDir : (col==='rank'?1:-1);
   sortCol = col;
   ['rank','cnt','mx','mn','avg','dod'].forEach(c => {
-    document.getElementById('th-' + c).classList.toggle('sort-active', c === col);
-    document.getElementById('si-' + c).textContent = c === col ? (sortDir === -1 ? '↓' : '↑') : '';
+    document.getElementById('th-'+c).classList.toggle('sort-active', c===col);
+    document.getElementById('si-'+c).textContent = c===col ? (sortDir===-1?'↓':'↑') : '';
   });
   renderTableBody();
 }
 
-// ===== RARITY CHIPS =====
 function buildRarityChips() {
-  const rarities = [...new Set(tableData.map(r => r.rarity).filter(Boolean))].sort();
+  const rarities = [...new Set(tableData.map(r=>r.rarity).filter(Boolean))].sort();
   const container = document.getElementById('rarityChips');
-  const all = document.createElement('button');
-  all.className = 'chip active';
-  all.textContent = 'ALL';
-  all.dataset.rarity = 'all';
-  all.onclick = () => setRarityFilter('all');
-  container.appendChild(all);
-  rarities.forEach(r => {
+  container.innerHTML = '';
+  ['all',...rarities].forEach(r => {
     const btn = document.createElement('button');
-    btn.className = 'chip';
-    btn.textContent = r;
+    btn.className = 'chip' + (r==='all'?' active':'');
+    btn.textContent = r==='all'?'ALL':r;
     btn.dataset.rarity = r;
     btn.onclick = () => setRarityFilter(r);
     container.appendChild(btn);
@@ -436,68 +445,49 @@ function buildRarityChips() {
 
 function setRarityFilter(r) {
   filterRarity = r;
-  document.querySelectorAll('.chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.rarity === r);
-  });
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.rarity===r));
   renderTableBody();
 }
 
 // ===== CHART SELECT =====
 function buildCardSelect() {
-  const cards = q(`
-    SELECT apparel_id, card_name, set_name, collection_no, MIN(rank) as rank
-    FROM ranking_transactions
-    GROUP BY apparel_id
-    ORDER BY MIN(rank)
-  `);
+  const cards = q(`SELECT apparel_id, card_name, set_name, collection_no, MIN(rank) as rank
+    FROM ranking_transactions GROUP BY apparel_id ORDER BY MIN(rank)`);
   allOptions = cards.map(c => {
     const meta = [c.set_name, c.collection_no].filter(Boolean).join(' · ');
-    const label = `#${c.rank||'?'} ${c.card_name}${meta ? '  ['+meta+']' : ''}`;
-    return { value: String(c.apparel_id), text: label, cardName: c.card_name || '' };
+    return { value: String(c.apparel_id), text: `#${c.rank||'?'} ${c.card_name}${meta?'  ['+meta+']':''}`, cardName: c.card_name||'' };
   });
   populateSelect(allOptions);
 }
 
-function populateSelect(options) {
-  const sel = document.getElementById('cardSelect');
-  sel.innerHTML = options.map(o =>
-    `<option value="${escJs(o.value)}">${o.text}</option>`
-  ).join('');
+function populateSelect(opts) {
+  document.getElementById('cardSelect').innerHTML = opts.map(o =>
+    `<option value="${escJs(o.value)}">${o.text}</option>`).join('');
 }
 
-function filterChartSelect(q) {
-  const lower = q.toLowerCase().trim();
-  const filtered = lower
-    ? allOptions.filter(o => o.text.toLowerCase().includes(lower))
-    : allOptions;
+function filterChartSelect(txt) {
+  const lower = txt.toLowerCase().trim();
+  const filtered = lower ? allOptions.filter(o => o.text.toLowerCase().includes(lower)) : allOptions;
   populateSelect(filtered);
-  if (filtered.length > 0) {
-    document.getElementById('cardSelect').value = filtered[0].value;
-    renderChart();
-  }
+  if (filtered.length) { document.getElementById('cardSelect').value = filtered[0].value; renderChart(); }
 }
 
-function onSelectChange() {
-  renderChart();
-}
+function onSelectChange() { renderChart(); }
 
-// ===== CARD SELECT =====
 function selectCard(apId, rowEl) {
   if (activeRow) activeRow.classList.remove('active');
   rowEl.classList.add('active');
   activeRow = rowEl;
-  // update chart select
-  const sel = document.getElementById('cardSelect');
-  // search in all options
-  const found = allOptions.find(o => o.value === String(apId));
-  if (found) {
-    // show all options first, then select
-    populateSelect(allOptions);
-    document.getElementById('chartSearchInput').value = '';
-    sel.value = String(apId);
-    renderChart();
-    document.getElementById('chartPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  populateSelect(allOptions);
+  document.getElementById('chartSearchInput').value = '';
+  document.getElementById('cardSelect').value = String(apId);
+  renderChart();
+  document.getElementById('chartPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function toggleLabels() {
+  showPriceLabels = !showPriceLabels;
+  renderChart();
 }
 
 // ===== CHART =====
@@ -505,81 +495,193 @@ function renderChart() {
   const apId = document.getElementById('cardSelect').value;
   if (!apId) return;
 
-  const rows = q(
-    'SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date',
-    [apId]
-  );
-  const stats = q(
-    'SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM ranking_transactions WHERE apparel_id=?',
-    [apId]
-  )[0];
+  const rows = q('SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date', [apId]);
+  const stats = q('SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM ranking_transactions WHERE apparel_id=?', [apId])[0];
+  const change24h = getTimeWindowChange(apId, 24);
+  const change48h = getTimeWindowChange(apId, 48);
 
-  // Update card name display
   const opt = allOptions.find(o => o.value === String(apId));
   document.getElementById('chartCardName').textContent = opt ? opt.cardName : '';
 
-  document.getElementById('chartStats').innerHTML = stats ? `
-    <span class="stat"><span class="stat-label">高値</span><span style="color:var(--red);font-weight:600">${fmt(stats.mx)}</span></span>
-    <span class="stat"><span class="stat-label">安値</span><span style="color:var(--green);font-weight:600">${fmt(stats.mn)}</span></span>
-    <span class="stat"><span class="stat-label">平均</span><span style="font-weight:700">${fmt(stats.avg)}</span></span>
-    <span class="stat"><span class="stat-label">件数</span><span style="color:var(--text2)">${stats.cnt||0}件</span></span>
-  ` : '';
-
-  const labels = rows.map(r => (r.transaction_date||'').replace('T',' ').substring(5, 16));
+  const labels = rows.map(r => (r.transaction_date||'').replace('T',' ').substring(5,16));
   const prices = rows.map(r => r.price);
+  const ma5  = calcMA(prices, 5);
+  const ma10 = calcMA(prices, 10);
+  const ma20 = calcMA(prices, 20);
+  const trend = getTrendSignal(prices, ma5, ma10, ma20);
+
+  updateStats(stats, change24h, change48h, trend);
 
   if (chartInst) chartInst.destroy();
   if (!prices.length) return;
 
+  const ptRadius = prices.length <= 40 ? 5 : (prices.length <= 100 ? 3 : 2);
+
   chartInst = new Chart(document.getElementById('priceChart'), {
-    type: 'line',
     data: {
       labels,
-      datasets: [{
-        data: prices,
-        borderColor: '#e8a020',
-        backgroundColor: 'rgba(232,160,32,0.06)',
-        borderWidth: 2,
-        pointRadius: prices.length <= 30 ? 5 : 3,
-        pointBackgroundColor: '#e8a020',
-        pointBorderColor: '#0f0f0f',
-        pointBorderWidth: 2,
-        tension: 0.3,
-        fill: true
-      }]
+      datasets: [
+        {
+          type: 'line',
+          label: '取引価格',
+          data: prices,
+          borderColor: '#e8a020',
+          backgroundColor: 'rgba(232,160,32,0.06)',
+          borderWidth: 2,
+          pointRadius: ptRadius,
+          pointBackgroundColor: '#e8a020',
+          pointBorderColor: '#0f0f0f',
+          pointBorderWidth: 2,
+          tension: 0.2,
+          fill: true,
+          order: 4,
+          datalabels: {
+            display: showPriceLabels,
+            color: '#e8a020',
+            backgroundColor: 'rgba(15,15,15,0.78)',
+            borderRadius: 3,
+            padding: { top:2, bottom:2, left:4, right:4 },
+            font: { size: 9, weight: 'bold' },
+            formatter: v => v ? '¥'+parseInt(v).toLocaleString() : null,
+            anchor: 'end',
+            align: 'top',
+            offset: 2,
+            clamp: true,
+          }
+        },
+        {
+          type: 'line',
+          label: 'MA5',
+          data: ma5,
+          borderColor: '#4caf7d',
+          borderWidth: 1.5,
+          borderDash: [5,3],
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+          spanGaps: false,
+          order: 3,
+          datalabels: { display: false }
+        },
+        {
+          type: 'line',
+          label: 'MA10',
+          data: ma10,
+          borderColor: '#5b9cf6',
+          borderWidth: 1.5,
+          borderDash: [5,3],
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+          spanGaps: false,
+          order: 2,
+          datalabels: { display: false }
+        },
+        {
+          type: 'line',
+          label: 'MA20',
+          data: ma20,
+          borderColor: '#e05555',
+          borderWidth: 1.5,
+          borderDash: [5,3],
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+          spanGaps: false,
+          order: 1,
+          datalabels: { display: false }
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: ctx => '¥' + ctx.raw.toLocaleString() } }
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.raw;
+              if (v === null) return null;
+              return ctx.dataset.label + ': ¥' + parseInt(v).toLocaleString();
+            }
+          }
+        },
+        datalabels: {}
       },
       scales: {
-        x: { ticks: { color:'#666', font:{size:11}, maxTicksLimit:8, maxRotation:30 }, grid: { color:'rgba(255,255,255,0.05)' } },
+        x: { ticks:{ color:'#666', font:{size:11}, maxTicksLimit:10, maxRotation:30 }, grid:{ color:'rgba(255,255,255,0.05)' } },
         y: {
-          ticks: { color:'#666', font:{size:11}, callback: v => v >= 10000 ? '¥'+(v/10000).toFixed(0)+'万' : '¥'+v.toLocaleString() },
-          grid: { color:'rgba(255,255,255,0.05)' }
+          ticks:{ color:'#666', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(0)+'万' : '¥'+v.toLocaleString() },
+          grid:{ color:'rgba(255,255,255,0.05)' }
         }
       }
     }
   });
+
+  // Legend
+  document.getElementById('chartLegend').innerHTML = `
+    <div class="legend-item"><div class="legend-line" style="background:#e8a020;height:2px"></div>取引価格</div>
+    <div class="legend-item" style="color:#4caf7d"><div class="legend-line legend-dashed" style="color:#4caf7d;height:0;border-top:2px dashed #4caf7d;width:20px"></div>MA5${trend.lastMA5?'  '+fmt(trend.lastMA5):'  —'}</div>
+    <div class="legend-item" style="color:#5b9cf6"><div class="legend-line legend-dashed" style="color:#5b9cf6;height:0;border-top:2px dashed #5b9cf6;width:20px"></div>MA10${trend.lastMA10?'  '+fmt(trend.lastMA10):'  —'}</div>
+    <div class="legend-item" style="color:#e05555"><div class="legend-line legend-dashed" style="color:#e05555;height:0;border-top:2px dashed #e05555;width:20px"></div>MA20${trend.lastMA20?'  '+fmt(trend.lastMA20):'  —'}</div>
+  `;
 }
 
-// ===== EVENT LISTENERS =====
-document.getElementById('tableSearch').addEventListener('input', function() {
-  filterText = this.value;
-  renderTableBody();
-});
+// ===== STATS DISPLAY =====
+function updateStats(stats, ch24, ch48, trend) {
+  // Row1: 基本
+  document.getElementById('statsRow1').innerHTML = stats ? `
+    <div class="stat-box"><div class="stat-box-label">高値</div><div class="stat-box-val" style="color:var(--red)">${fmt(stats.mx)}</div></div>
+    <div class="stat-box"><div class="stat-box-label">安値</div><div class="stat-box-val" style="color:var(--green)">${fmt(stats.mn)}</div></div>
+    <div class="stat-box"><div class="stat-box-label">平均</div><div class="stat-box-val">${fmt(stats.avg)}</div></div>
+    <div class="stat-box"><div class="stat-box-label">件数</div><div class="stat-box-val" style="color:var(--text2)">${stats.cnt||0}件</div></div>
+  ` : '';
 
+  // Row2: 時間変化
+  document.getElementById('statsRow2').innerHTML =
+    fmtChangeBox(ch24, '24h変化') + fmtChangeBox(ch48, '48h変化');
+
+  // Signal row
+  const sigCls = `signal-badge sig-${trend.cls}`;
+  const scoreStr = trend.maxScore > 0 ? `${trend.score}/${trend.maxScore}` : '';
+  const needMore = trend.dataPoints < 20 ? `<span style="font-size:10px;color:var(--text3)"> (${trend.dataPoints}件/20件)</span>` : '';
+  document.getElementById('signalRow').innerHTML = `
+    <span class="signal-label-text">トレンド判定:</span>
+    <span class="${sigCls}">${trend.signal}</span>
+    ${scoreStr ? `<span class="signal-score">(${scoreStr})</span>` : ''}
+    ${needMore}
+    <button class="label-toggle-btn${showPriceLabels?' active':''}" onclick="toggleLabels()">💰 金額ラベル</button>
+  `;
+}
+
+function fmtChangeBox(ch, label) {
+  if (!ch || ch.count === 0) {
+    return `<div class="stat-box"><div class="stat-box-label">${label}</div><div class="stat-box-val" style="color:var(--text3)">取引なし</div></div>`;
+  }
+  if (ch.diff === null) {
+    return `<div class="stat-box"><div class="stat-box-label">${label}</div><div class="stat-box-val" style="color:var(--text2)">${fmt(ch.price)}</div><div class="stat-box-sub">1件のみ</div></div>`;
+  }
+  const isUp = ch.diff >= 0;
+  const clr = isUp ? 'var(--green)' : 'var(--red)';
+  const arr = isUp ? '▲' : '▼';
+  return `<div class="stat-box">
+    <div class="stat-box-label">${label} (${ch.count}件)</div>
+    <div class="stat-box-val" style="color:${clr}">${arr}${Math.abs(ch.pct).toFixed(1)}%</div>
+    <div class="stat-box-sub">${fmtDiff(ch.diff)}　${fmt(ch.oldest)}→${fmt(ch.newest)}</div>
+  </div>`;
+}
+
+// ===== EVENTS =====
+document.getElementById('tableSearch').addEventListener('input', function() {
+  filterText = this.value; renderTableBody();
+});
 document.getElementById('chartSearchInput').addEventListener('input', function() {
   filterChartSelect(this.value);
 });
-
-// Scroll-to-top button
 window.addEventListener('scroll', () => {
-  const btn = document.getElementById('scrollTopBtn');
-  btn.classList.toggle('show', window.scrollY > 300);
+  document.getElementById('scrollTopBtn').classList.toggle('show', window.scrollY > 300);
 });
 
 loadData();
