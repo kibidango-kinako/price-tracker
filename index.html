@@ -88,7 +88,7 @@
 
   /* TABLE */
   .tbl-outer{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:62vh;border-radius:var(--radius);}
-  table{width:100%;border-collapse:collapse;font-size:12px;min-width:780px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px;}
   thead{position:sticky;top:0;z-index:10;}
   th{padding:8px 10px;border-bottom:2px solid var(--border2);font-size:10px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;text-align:right;user-select:none;background:var(--bg2);}
   th:first-child{text-align:left;}
@@ -209,6 +209,7 @@
               <th class="sortable" onclick="setSort('mn')"   id="th-mn">安値<span class="sort-icon" id="si-mn"></span></th>
               <th class="sortable" onclick="setSort('avg')"  id="th-avg">平均<span class="sort-icon" id="si-avg"></span></th>
               <th class="sortable sort-active" onclick="setSort('dod')" id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
+              <th class="sortable" onclick="setSort('trendScore')" id="th-trendScore" title="MA5/10/20によるトレンド判定">判定<span class="sort-icon" id="si-trendScore"></span></th>
               <th class="hide-mobile" title="スニダン(手数料9.3%+送料¥240)で利益率10%の仕入上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
               <th class="hide-mobile" title="メルカリ(手数料10%+送料¥160)で利益率10%の仕入上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
             </tr>
@@ -233,7 +234,12 @@ let db = null, chartInst = null, activeRow = null;
 let tableData = [], allOptions = [];
 let sortCol = 'dod', sortDir = -1;
 let filterRarity = 'all', filterText = '';
-let showPriceLabels = false;
+let showPriceLabels = true;
+
+// プラグイン登録（UMDビルドでも明示的に登録）
+if (typeof ChartDataLabels !== 'undefined') {
+  Chart.register(ChartDataLabels);
+}
 
 // ===== UTILS =====
 function setStatus(msg, state) {
@@ -341,6 +347,9 @@ function buildDashboard() {
 }
 
 // ===== TABLE =====
+const TREND_SCORE_MAP = { 'strong-buy':5, 'buy':4, 'neutral':3, 'sell':2, 'strong-sell':1, 'no-data':0 };
+const TREND_LABEL_MAP = { 'strong-buy':'強い買い', 'buy':'買い', 'neutral':'中立', 'sell':'売り', 'strong-sell':'強い売り', 'no-data':'—' };
+
 function buildDodMap() {
   const rows = q(`SELECT apparel_id, collected_date, CAST(AVG(price) AS INT) as da
     FROM ranking_transactions GROUP BY apparel_id, collected_date ORDER BY apparel_id, collected_date DESC`);
@@ -352,8 +361,27 @@ function buildDodMap() {
   return map;
 }
 
+// 全カードのトレンドを一括計算（1クエリで完結）
+function buildTrendMap() {
+  const allTx = q(`SELECT apparel_id, price FROM ranking_transactions ORDER BY apparel_id, transaction_date ASC`);
+  const priceMap = {};
+  allTx.forEach(r => {
+    if (!priceMap[r.apparel_id]) priceMap[r.apparel_id] = [];
+    priceMap[r.apparel_id].push(r.price);
+  });
+  const result = {};
+  Object.entries(priceMap).forEach(([apId, prices]) => {
+    const ma5  = calcMA(prices, 5);
+    const ma10 = calcMA(prices, 10);
+    const ma20 = calcMA(prices, 20);
+    result[apId] = getTrendSignal(prices, ma5, ma10, ma20);
+  });
+  return result;
+}
+
 function buildTable() {
-  const dodMap = buildDodMap();
+  const dodMap   = buildDodMap();
+  const trendMap = buildTrendMap();
   const rows = q(`SELECT apparel_id, card_name, rarity, set_name, collection_no, url,
     MIN(rank) as rank, COUNT(*) as cnt, MAX(price) as mx, MIN(price) as mn,
     CAST(AVG(price) AS INT) as avg, MAX(has_more) as has_more
@@ -363,7 +391,9 @@ function buildTable() {
     const dod_pct = (dod && dod.length >= 2) ? (dod[0]-dod[1])/dod[1]*100 : null;
     const snkr = r.avg > 0 ? Math.floor((r.avg*0.907-240)/1.10) : null;
     const mcr  = r.avg > 0 ? Math.floor((r.avg*0.900-160)/1.10) : null;
-    return { ...r, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null };
+    const trend = trendMap[r.apparel_id] || { cls:'no-data', score:0, maxScore:0, dataPoints:0 };
+    const trendScore = TREND_SCORE_MAP[trend.cls] ?? 0;
+    return { ...r, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null, trend, trendScore };
   });
   renderTableBody();
 }
@@ -404,6 +434,9 @@ function renderTableBody() {
       ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'▲':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
       : '<span class="chg flat">—</span>';
     const isActive = String(r.apparel_id) === currentApId;
+    const trendLabel = TREND_LABEL_MAP[r.trend.cls] || '—';
+    const scoreInfo = r.trend.maxScore > 0 ? ` title="${r.trend.score}/${r.trend.maxScore}点 (${r.trend.dataPoints}件)"` : '';
+    const trendHtml = `<span class="signal-badge sig-${r.trend.cls}"${scoreInfo} style="font-size:10px;padding:2px 8px;cursor:default">${trendLabel}</span>`;
     return `<tr onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}"${isActive?' class="active"':''}>
       <td><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name||'—'}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</td>
       <td style="text-align:center">${rarityBadge(r.rarity)}</td>
@@ -413,6 +446,7 @@ function renderTableBody() {
       <td style="color:var(--green)">${fmt(r.mn)}</td>
       <td class="price-avg">${fmt(r.avg)}</td>
       <td>${dodHtml}</td>
+      <td style="text-align:center">${trendHtml}</td>
       <td class="buy-price hide-mobile">${r.snkr?fmt(r.snkr):'<span style="color:var(--text3)">—</span>'}</td>
       <td class="buy-price hide-mobile">${r.mcr ?fmt(r.mcr) :'<span style="color:var(--text3)">—</span>'}</td>
     </tr>`;
@@ -422,9 +456,11 @@ function renderTableBody() {
 function setSort(col) {
   sortDir = (sortCol === col) ? -sortDir : (col==='rank'?1:-1);
   sortCol = col;
-  ['rank','cnt','mx','mn','avg','dod'].forEach(c => {
-    document.getElementById('th-'+c).classList.toggle('sort-active', c===col);
-    document.getElementById('si-'+c).textContent = c===col ? (sortDir===-1?'↓':'↑') : '';
+  ['rank','cnt','mx','mn','avg','dod','trendScore'].forEach(c => {
+    const th = document.getElementById('th-'+c);
+    const si = document.getElementById('si-'+c);
+    if (th) th.classList.toggle('sort-active', c===col);
+    if (si) si.textContent = c===col ? (sortDir===-1?'↓':'↑') : '';
   });
   renderTableBody();
 }
@@ -536,16 +572,16 @@ function renderChart() {
           fill: true,
           order: 4,
           datalabels: {
-            display: showPriceLabels,
+            display: showPriceLabels ? 'auto' : false,
             color: '#e8a020',
-            backgroundColor: 'rgba(15,15,15,0.78)',
+            backgroundColor: 'rgba(15,15,15,0.82)',
             borderRadius: 3,
             padding: { top:2, bottom:2, left:4, right:4 },
-            font: { size: 9, weight: 'bold' },
-            formatter: v => v ? '¥'+parseInt(v).toLocaleString() : null,
+            font: { size: prices.length > 60 ? 8 : 9, weight: 'bold' },
+            formatter: v => (v != null) ? '¥' + parseInt(v).toLocaleString() : null,
             anchor: 'end',
             align: 'top',
-            offset: 2,
+            offset: 3,
             clamp: true,
           }
         },
@@ -608,7 +644,7 @@ function renderChart() {
             }
           }
         },
-        datalabels: {}
+        datalabels: { display: false }  // MA線などのデフォルトは非表示、dataset側で上書き
       },
       scales: {
         x: { ticks:{ color:'#666', font:{size:11}, maxTicksLimit:10, maxRotation:30 }, grid:{ color:'rgba(255,255,255,0.05)' } },
