@@ -227,7 +227,8 @@ function buildTable() {
       COUNT(*) as cnt,
       MAX(price) as mx,
       MIN(price) as mn,
-      CAST(AVG(price) AS INT) as avg
+      CAST(AVG(price) AS INT) as avg,
+      MAX(has_more) as has_more
     FROM ranking_transactions
     GROUP BY apparel_id
   `);
@@ -269,7 +270,7 @@ function renderTableBody() {
         </td>
         <td style="text-align:center">${rarityBadge(r.rarity)}</td>
         <td style="color:var(--text3);font-size:11px">${r.rank ? '#'+r.rank : '—'}</td>
-        <td style="color:var(--blue)">${r.cnt}</td>
+        <td style="color:var(--blue)">${r.cnt}${r.has_more ? '<sup style="color:var(--accent);font-size:9px;margin-left:1px">+</sup>' : ''}</td>
         <td style="color:var(--red)">${fmt(r.mx)}</td>
         <td style="color:var(--green)">${fmt(r.mn)}</td>
         <td class="price-avg">${fmt(r.avg)}</td>
