@@ -16,7 +16,7 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue','Hiragino Sans',sans-serif;min-height:100vh;}
 
-  /* HEADER */
+  /* ===== HEADER ===== */
   .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;gap:12px;}
   .header-left{display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .header-left h1{font-size:16px;font-weight:600;}
@@ -31,12 +31,12 @@
   .reload-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:var(--radius);font-size:12px;cursor:pointer;white-space:nowrap;}
   .reload-btn:hover{background:var(--border2);}
 
-  /* LAYOUT */
+  /* ===== LAYOUT ===== */
   .container{max-width:1200px;margin:0 auto;padding:16px;}
   .panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;}
   .section-title{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
 
-  /* CHART SELECT */
+  /* ===== CHART SELECT ===== */
   .chart-card-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;min-height:20px;}
   .search-select-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
   .search-icon-wrap{position:relative;flex:1;}
@@ -45,14 +45,14 @@
   select{padding-left:10px;}
   .chart-search-input:focus,select:focus{border-color:var(--accent2);}
 
-  /* STATS GRID */
+  /* ===== STATS GRID ===== */
   .stats-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
   .stat-box{background:var(--bg3);border-radius:8px;padding:7px 10px;min-width:90px;flex:1;}
   .stat-box-label{font-size:10px;color:var(--text3);margin-bottom:2px;white-space:nowrap;}
   .stat-box-val{font-size:13px;font-weight:700;white-space:nowrap;}
   .stat-box-sub{font-size:10px;color:var(--text2);margin-top:2px;white-space:nowrap;}
 
-  /* SIGNAL BADGE */
+  /* ===== SIGNAL BADGE ===== */
   .signal-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
   .signal-label-text{font-size:11px;color:var(--text2);}
   .signal-badge{display:inline-block;padding:3px 12px;border-radius:4px;font-size:13px;font-weight:700;letter-spacing:.03em;}
@@ -60,23 +60,20 @@
   .sig-buy       {background:rgba(91,156,246,.2);color:var(--blue); border:1px solid rgba(91,156,246,.4);}
   .sig-neutral   {background:rgba(136,136,136,.2);color:#888;       border:1px solid rgba(136,136,136,.3);}
   .sig-sell      {background:rgba(232,160,32,.2); color:var(--accent);border:1px solid rgba(232,160,32,.4);}
-  .sig-strong-sell{background:rgba(224,85,85,.2); color:var(--red);  border:1px solid rgba(224,85,85,.4);}
+  .sig-strong-sell{background:rgba(224,85,85,.2);color:var(--red);  border:1px solid rgba(224,85,85,.4);}
   .sig-no-data   {background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
   .signal-score{font-size:11px;color:var(--text3);}
   .label-toggle-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;transition:all .15s;}
   .label-toggle-btn.active{border-color:var(--accent);color:var(--accent);}
-  .label-toggle-btn:hover{border-color:var(--accent2);}
 
-  /* CHART */
+  /* ===== CHART ===== */
   .chart-wrap{position:relative;width:100%;height:260px;}
   .chart-legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;}
   .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
-  .legend-line{width:20px;height:2px;border-radius:2px;}
-  .legend-dashed{background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 8px);}
 
-  /* TABLE FILTER BAR */
+  /* ===== FILTER BAR ===== */
   .filter-bar{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;}
-  .search-wrap{position:relative;flex:1;min-width:180px;}
+  .search-wrap{position:relative;flex:1;min-width:160px;}
   .search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;}
   .search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 10px 7px 32px;border-radius:var(--radius);font-size:13px;outline:none;transition:border-color .15s;}
   .search-input:focus{border-color:var(--accent2);}
@@ -86,7 +83,16 @@
   .chip.active{background:var(--accent);border-color:var(--accent);color:#000;}
   .result-count{font-size:12px;color:var(--text3);white-space:nowrap;}
 
-  /* TABLE */
+  /* ===== RARITY BADGES ===== */
+  .rarity{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:.03em;white-space:nowrap;}
+  .r-SAR{background:rgba(232,160,32,.15);color:var(--accent);border:1px solid rgba(232,160,32,.3);}
+  .r-HR {background:rgba(224,85,85,.15); color:var(--red);   border:1px solid rgba(224,85,85,.3);}
+  .r-SR {background:rgba(91,156,246,.15);color:var(--blue);  border:1px solid rgba(91,156,246,.3);}
+  .r-MA {background:rgba(76,175,125,.15);color:var(--green); border:1px solid rgba(76,175,125,.3);}
+  .r-MUR{background:rgba(200,100,246,.15);color:#d080f6;     border:1px solid rgba(200,100,246,.3);}
+  .r-other{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+
+  /* ===== TABLE (desktop) ===== */
   .tbl-outer{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:62vh;border-radius:var(--radius);}
   table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px;}
   thead{position:sticky;top:0;z-index:10;}
@@ -106,13 +112,6 @@
   .card-link{color:var(--text);text-decoration:none;font-size:12px;font-weight:500;line-height:1.4;}
   .card-link:hover{color:var(--accent);}
   .card-meta{font-size:10px;color:var(--text3);margin-top:2px;}
-  .rarity{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:.03em;white-space:nowrap;}
-  .r-SAR{background:rgba(232,160,32,.15);color:var(--accent);border:1px solid rgba(232,160,32,.3);}
-  .r-HR {background:rgba(224,85,85,.15); color:var(--red);   border:1px solid rgba(224,85,85,.3);}
-  .r-SR {background:rgba(91,156,246,.15);color:var(--blue);  border:1px solid rgba(91,156,246,.3);}
-  .r-MA {background:rgba(76,175,125,.15);color:var(--green); border:1px solid rgba(76,175,125,.3);}
-  .r-MUR{background:rgba(200,100,246,.15);color:#d080f6;     border:1px solid rgba(200,100,246,.3);}
-  .r-other{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
   .price-avg{font-weight:600;}
   .chg{font-size:11px;font-weight:700;white-space:nowrap;}
   .chg.up{color:var(--green);}
@@ -121,22 +120,71 @@
   .buy-price{font-size:11px;color:var(--text2);}
   .empty-state{text-align:center;padding:40px;color:var(--text3);font-size:13px;}
 
-  /* LOADING */
+  /* ===== MOBILE SORT SELECT ===== */
+  .mobile-sort-bar{display:none;gap:8px;margin-bottom:10px;align-items:center;}
+  .mobile-sort-bar label{font-size:11px;color:var(--text3);white-space:nowrap;}
+  .mobile-sort-bar select{flex:1;max-width:200px;padding:6px 8px;font-size:12px;}
+  .mobile-sort-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 10px;border-radius:var(--radius);font-size:12px;cursor:pointer;white-space:nowrap;}
+  .mobile-sort-btn:hover{border-color:var(--accent2);}
+
+  /* ===== CARD BLOCK (mobile) ===== */
+  .card-block{padding:12px;}
+  .card-block-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+  .card-block-name{flex:1;min-width:0;}
+  .card-block-name .card-link{font-size:13px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-block-name .card-meta{font-size:10px;margin-top:3px;}
+  .card-block-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+  .card-block-meta-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;}
+  .card-block-prices{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--bg3);border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+  .card-price-item{display:flex;flex-direction:column;}
+  .card-price-label{font-size:9px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em;}
+  .card-price-val{font-size:13px;font-weight:700;}
+  .card-block-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+  .card-block-buy{display:flex;gap:10px;font-size:11px;flex-wrap:wrap;}
+  .card-buy-item{display:flex;flex-direction:column;}
+  .card-buy-label{font-size:9px;color:var(--text3);margin-bottom:1px;}
+  .card-buy-val{color:var(--text2);font-weight:600;}
+
+  /* card row override styles */
+  .card-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s;}
+  .card-row:hover{border-color:var(--border2);}
+  .card-row.active{border-color:var(--accent) !important;background:rgba(232,160,32,.04);}
+  .card-row.active .card-link{color:var(--accent);}
+  .card-row td{display:block;border:none;padding:0;text-align:left !important;}
+
+  /* ===== LOADING ===== */
   .loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;}
   .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .loading-state p{font-size:13px;color:var(--text2);}
 
-  /* SCROLL TOP */
+  /* ===== SCROLL TOP ===== */
   #scrollTopBtn{position:fixed;bottom:20px;right:20px;z-index:300;background:var(--accent);color:#000;border:none;width:38px;height:38px;border-radius:50%;font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.4);}
   #scrollTopBtn.show{display:flex;}
 
-  @media(max-width:600px){
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:767px){
     .header{padding:10px 12px;}
     .container{padding:10px;}
-    .hide-mobile{display:none!important;}
-    td,th{padding:6px 6px;}
     .stat-box{min-width:70px;}
+    /* テーブルモードを隠してカードモードを表示 */
+    .tbl-outer{overflow:visible;max-height:none;}
+    table{min-width:0;display:block;}
+    thead{display:none !important;}
+    tbody{display:block;}
+    /* mobile sort bar を表示 */
+    .mobile-sort-bar{display:flex;}
+    /* hide-desktop classを有効に */
+    .hide-desktop{display:none!important;}
+  }
+  @media(min-width:768px){
+    /* hide-mobile classを有効に */
+    .hide-mobile{display:none!important;}
+    /* card-row はデスクトップでは通常の<tr>と同じ見た目にする */
+    .card-row{background:none;border:none;border-radius:0;margin:0;}
+    .card-row:hover td{background:rgba(255,255,255,.03);}
+    .card-row.active td{background:rgba(232,160,32,.08);}
+    .card-row td{display:table-cell;border-bottom:1px solid var(--border);padding:7px 10px;}
   }
 </style>
 </head>
@@ -166,30 +214,24 @@
     <div class="panel" id="chartPanel">
       <div class="section-title">価格推移 (PSA10)</div>
       <div class="chart-card-name" id="chartCardName">—</div>
-
       <div class="search-select-row">
         <div class="search-icon-wrap" style="flex:1">
           <input class="chart-search-input" type="text" id="chartSearchInput" placeholder="カードを検索してチャートを切替...">
         </div>
       </div>
       <select id="cardSelect" onchange="onSelectChange()" style="margin-bottom:10px"></select>
-
-      <!-- Row1: 基本stats -->
       <div class="stats-row" id="statsRow1"></div>
-      <!-- Row2: 24h / 48h 変化 -->
       <div class="stats-row" id="statsRow2"></div>
-      <!-- Row3: MA値 + シグナル + ラベルボタン -->
       <div class="signal-row" id="signalRow"></div>
-
-      <div class="chart-wrap">
-        <canvas id="priceChart"></canvas>
-      </div>
+      <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
       <div class="chart-legend" id="chartLegend"></div>
     </div>
 
     <!-- 相場一覧 -->
     <div class="panel">
       <div class="section-title">相場一覧 (PSA10)</div>
+
+      <!-- フィルターバー -->
       <div class="filter-bar">
         <div class="search-wrap">
           <input class="search-input" type="text" id="tableSearch" placeholder="カード名・弾名で絞り込み">
@@ -197,18 +239,35 @@
         <div class="filter-chips" id="rarityChips"></div>
         <span class="result-count" id="resultCount"></span>
       </div>
+
+      <!-- モバイル用ソート (hide-desktop) -->
+      <div class="mobile-sort-bar hide-desktop" id="mobileSortBar">
+        <label>並替:</label>
+        <select id="mobileSortSelect" onchange="onMobileSortChange()">
+          <option value="dod">前日比</option>
+          <option value="trendScore">判定</option>
+          <option value="avg">平均価格</option>
+          <option value="mx">高値</option>
+          <option value="mn">安値</option>
+          <option value="cnt">件数</option>
+          <option value="rank">ランク</option>
+        </select>
+        <button class="mobile-sort-btn" id="mobileSortDirBtn" onclick="toggleMobileSortDir()">↓ 降順</button>
+      </div>
+
+      <!-- テーブル -->
       <div class="tbl-outer">
         <table>
           <thead>
             <tr>
               <th style="text-align:left;min-width:160px">カード名 / 弾・No.</th>
               <th style="min-width:48px">レア</th>
-              <th class="sortable" onclick="setSort('rank')" id="th-rank">ランク<span class="sort-icon" id="si-rank"></span></th>
-              <th class="sortable" onclick="setSort('cnt')"  id="th-cnt">件数<span class="sort-icon" id="si-cnt"></span></th>
-              <th class="sortable" onclick="setSort('mx')"   id="th-mx">高値<span class="sort-icon" id="si-mx"></span></th>
-              <th class="sortable" onclick="setSort('mn')"   id="th-mn">安値<span class="sort-icon" id="si-mn"></span></th>
-              <th class="sortable" onclick="setSort('avg')"  id="th-avg">平均<span class="sort-icon" id="si-avg"></span></th>
-              <th class="sortable sort-active" onclick="setSort('dod')" id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
+              <th class="sortable" onclick="setSort('rank')"       id="th-rank">ランク<span class="sort-icon" id="si-rank"></span></th>
+              <th class="sortable" onclick="setSort('cnt')"        id="th-cnt">件数<span class="sort-icon" id="si-cnt"></span></th>
+              <th class="sortable" onclick="setSort('mx')"         id="th-mx">高値<span class="sort-icon" id="si-mx"></span></th>
+              <th class="sortable" onclick="setSort('mn')"         id="th-mn">安値<span class="sort-icon" id="si-mn"></span></th>
+              <th class="sortable" onclick="setSort('avg')"        id="th-avg">平均<span class="sort-icon" id="si-avg"></span></th>
+              <th class="sortable sort-active" onclick="setSort('dod')"        id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
               <th class="sortable" onclick="setSort('trendScore')" id="th-trendScore" title="MA5/10/20によるトレンド判定">判定<span class="sort-icon" id="si-trendScore"></span></th>
               <th class="hide-mobile" title="スニダン(手数料9.3%+送料¥240)で利益率10%の仕入上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
               <th class="hide-mobile" title="メルカリ(手数料10%+送料¥160)で利益率10%の仕入上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
@@ -230,25 +289,25 @@
 <script>
 // ===== GLOBALS =====
 const DB_URL = 'https://raw.githubusercontent.com/kibidango-kinako/price-tracker/main/data/ranking_database.db';
-let db = null, chartInst = null, activeRow = null;
+let db = null, chartInst = null, activeApId = null;
 let tableData = [], allOptions = [];
 let sortCol = 'dod', sortDir = -1;
 let filterRarity = 'all', filterText = '';
 let showPriceLabels = true;
+let lastWidth = window.innerWidth;
 
-// プラグイン登録（UMDビルドでも明示的に登録）
-if (typeof ChartDataLabels !== 'undefined') {
-  Chart.register(ChartDataLabels);
-}
+if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+
+const isMobile = () => window.innerWidth < 768;
 
 // ===== UTILS =====
 function setStatus(msg, state) {
   document.getElementById('statusText').textContent = msg;
   document.getElementById('dot').className = 'status-dot ' + state;
 }
-const fmt = v => (v != null && v > 0) ? '¥' + parseInt(v).toLocaleString() : '—';
-const fmtDiff = v => (v >= 0 ? '+¥' : '-¥') + Math.abs(parseInt(v)).toLocaleString();
-const escJs = s => (s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const fmt    = v => (v != null && v > 0) ? '¥' + parseInt(v).toLocaleString() : '—';
+const fmtDiff= v => (v >= 0 ? '+¥' : '-¥') + Math.abs(parseInt(v)).toLocaleString();
+const escJs  = s => (s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 function rarityBadge(r) {
   const known = ['SAR','HR','SR','MA','MUR'];
   const cls = known.includes(r) ? 'r-'+r : 'r-other';
@@ -281,34 +340,37 @@ function q(sql, params) {
   return values.map(r => Object.fromEntries(columns.map((c,i) => [c, r[i]])));
 }
 
-// ===== MOVING AVERAGES =====
+// ===== MA =====
 function calcMA(data, period) {
   return data.map((_, i) => {
     if (i < period - 1) return null;
-    const slice = data.slice(i - period + 1, i + 1);
-    return Math.round(slice.reduce((a,b) => a+b, 0) / period);
+    const s = data.slice(i - period + 1, i + 1);
+    return Math.round(s.reduce((a,b) => a+b, 0) / period);
   });
 }
 
-// ===== TIME WINDOW CHANGE (24h / 48h) =====
+// ===== 24h/48h変化 =====
 function getTimeWindowChange(apId, hours) {
   const maxRes = q('SELECT MAX(transaction_date) as d FROM ranking_transactions WHERE apparel_id=?', [apId]);
   if (!maxRes.length || !maxRes[0].d) return null;
   const maxDate = maxRes[0].d;
   const rows = q(
-    `SELECT price, transaction_date FROM ranking_transactions
+    `SELECT price FROM ranking_transactions
      WHERE apparel_id=? AND transaction_date >= datetime(?, '-${hours} hours')
      ORDER BY transaction_date ASC`,
     [apId, maxDate]
   );
-  if (!rows.length) return { count: 0, diff: null };
-  if (rows.length === 1) return { count: 1, diff: null, price: rows[0].price };
+  if (!rows.length) return { count:0, diff:null };
+  if (rows.length === 1) return { count:1, diff:null, price:rows[0].price };
   const oldest = rows[0].price, newest = rows[rows.length-1].price;
   const diff = newest - oldest;
-  return { oldest, newest, diff, pct: (diff / oldest) * 100, count: rows.length };
+  return { oldest, newest, diff, pct:(diff/oldest)*100, count:rows.length };
 }
 
 // ===== TREND SIGNAL =====
+const TREND_SCORE_MAP = { 'strong-buy':5,'buy':4,'neutral':3,'sell':2,'strong-sell':1,'no-data':0 };
+const TREND_LABEL_MAP = { 'strong-buy':'強い買い','buy':'買い','neutral':'中立','sell':'売り','strong-sell':'強い売り','no-data':'—' };
+
 function getTrendSignal(prices, ma5, ma10, ma20) {
   const n = prices.length;
   if (n === 0) return { signal:'—', cls:'no-data', score:0, maxScore:0, dataPoints:n, lastMA5:null, lastMA10:null, lastMA20:null };
@@ -317,7 +379,7 @@ function getTrendSignal(prices, ma5, ma10, ma20) {
   const lastMA10 = n >= 10 ? ma10[n-1] : null;
   const lastMA20 = n >= 20 ? ma20[n-1] : null;
   let score = 0, maxScore = 0;
-  const add = (cond) => { maxScore++; if (cond) score++; };
+  const add = cond => { maxScore++; if (cond) score++; };
   if (lastMA5  !== null) add(lastPrice > lastMA5);
   if (lastMA10 !== null) add(lastPrice > lastMA10);
   if (lastMA20 !== null) add(lastPrice > lastMA20);
@@ -333,7 +395,7 @@ function getTrendSignal(prices, ma5, ma10, ma20) {
   else if (ratio >= 1/6) { signal='売り';     cls='sell'; }
   else                   { signal='強い売り'; cls='strong-sell'; }
   const partial = maxScore < 6 ? '（参考）' : '';
-  return { signal: signal+partial, cls, score, maxScore, dataPoints:n, lastMA5, lastMA10, lastMA20 };
+  return { signal:signal+partial, cls, score, maxScore, dataPoints:n, lastMA5, lastMA10, lastMA20 };
 }
 
 // ===== BUILD DASHBOARD =====
@@ -346,10 +408,7 @@ function buildDashboard() {
   renderChart();
 }
 
-// ===== TABLE =====
-const TREND_SCORE_MAP = { 'strong-buy':5, 'buy':4, 'neutral':3, 'sell':2, 'strong-sell':1, 'no-data':0 };
-const TREND_LABEL_MAP = { 'strong-buy':'強い買い', 'buy':'買い', 'neutral':'中立', 'sell':'売り', 'strong-sell':'強い売り', 'no-data':'—' };
-
+// ===== TABLE DATA =====
 function buildDodMap() {
   const rows = q(`SELECT apparel_id, collected_date, CAST(AVG(price) AS INT) as da
     FROM ranking_transactions GROUP BY apparel_id, collected_date ORDER BY apparel_id, collected_date DESC`);
@@ -361,20 +420,13 @@ function buildDodMap() {
   return map;
 }
 
-// 全カードのトレンドを一括計算（1クエリで完結）
 function buildTrendMap() {
   const allTx = q(`SELECT apparel_id, price FROM ranking_transactions ORDER BY apparel_id, transaction_date ASC`);
-  const priceMap = {};
-  allTx.forEach(r => {
-    if (!priceMap[r.apparel_id]) priceMap[r.apparel_id] = [];
-    priceMap[r.apparel_id].push(r.price);
-  });
+  const pm = {};
+  allTx.forEach(r => { if (!pm[r.apparel_id]) pm[r.apparel_id]=[]; pm[r.apparel_id].push(r.price); });
   const result = {};
-  Object.entries(priceMap).forEach(([apId, prices]) => {
-    const ma5  = calcMA(prices, 5);
-    const ma10 = calcMA(prices, 10);
-    const ma20 = calcMA(prices, 20);
-    result[apId] = getTrendSignal(prices, ma5, ma10, ma20);
+  Object.entries(pm).forEach(([apId, prices]) => {
+    result[apId] = getTrendSignal(prices, calcMA(prices,5), calcMA(prices,10), calcMA(prices,20));
   });
   return result;
 }
@@ -392,14 +444,14 @@ function buildTable() {
     const snkr = r.avg > 0 ? Math.floor((r.avg*0.907-240)/1.10) : null;
     const mcr  = r.avg > 0 ? Math.floor((r.avg*0.900-160)/1.10) : null;
     const trend = trendMap[r.apparel_id] || { cls:'no-data', score:0, maxScore:0, dataPoints:0 };
-    const trendScore = TREND_SCORE_MAP[trend.cls] ?? 0;
-    return { ...r, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null, trend, trendScore };
+    return { ...r, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null,
+             trend, trendScore: TREND_SCORE_MAP[trend.cls] ?? 0 };
   });
   renderTableBody();
 }
 
-function getFilteredData() {
-  return tableData.filter(r => {
+function getFilteredSorted() {
+  const filtered = tableData.filter(r => {
     const txt = filterText.trim().toLowerCase();
     if (txt) {
       const h = ((r.card_name||'')+' '+(r.set_name||'')+' '+(r.collection_no||'')).toLowerCase();
@@ -408,11 +460,7 @@ function getFilteredData() {
     if (filterRarity !== 'all' && r.rarity !== filterRarity) return false;
     return true;
   });
-}
-
-function renderTableBody() {
-  const filtered = getFilteredData();
-  const sorted = [...filtered].sort((a,b) => {
+  return [...filtered].sort((a,b) => {
     const va = a[sortCol], vb = b[sortCol];
     if (sortCol === 'rank') {
       if (!va && !vb) return 0; if (!va) return 1; if (!vb) return -1;
@@ -422,22 +470,36 @@ function renderTableBody() {
     if (va === null) return 1; if (vb === null) return -1;
     return sortDir * (vb - va);
   });
+}
+
+// ===== RENDER TABLE / CARDS =====
+function renderTableBody() {
+  const sorted = getFilteredSorted();
   document.getElementById('resultCount').textContent =
-    filtered.length < tableData.length ? `${filtered.length} / ${tableData.length} 件` : `全 ${tableData.length} 件`;
+    sorted.length < tableData.length ? `${sorted.length} / ${tableData.length} 件` : `全 ${tableData.length} 件`;
   const empty = document.getElementById('emptyState');
-  if (!sorted.length) { document.getElementById('tableBody').innerHTML=''; empty.style.display='block'; return; }
+  if (!sorted.length) {
+    document.getElementById('tableBody').innerHTML = '';
+    empty.style.display = 'block'; return;
+  }
   empty.style.display = 'none';
-  const currentApId = activeRow ? activeRow.dataset.apid : null;
-  document.getElementById('tableBody').innerHTML = sorted.map(r => {
+  document.getElementById('tableBody').innerHTML = isMobile()
+    ? renderCards(sorted)
+    : renderRows(sorted);
+}
+
+/* ----- デスクトップ: テーブル行 ----- */
+function renderRows(sorted) {
+  return sorted.map(r => {
     const meta = [r.set_name, r.collection_no].filter(Boolean).join(' · ');
     const dodHtml = r.dod !== null
       ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'▲':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
       : '<span class="chg flat">—</span>';
-    const isActive = String(r.apparel_id) === currentApId;
     const trendLabel = TREND_LABEL_MAP[r.trend.cls] || '—';
-    const scoreInfo = r.trend.maxScore > 0 ? ` title="${r.trend.score}/${r.trend.maxScore}点 (${r.trend.dataPoints}件)"` : '';
-    const trendHtml = `<span class="signal-badge sig-${r.trend.cls}"${scoreInfo} style="font-size:10px;padding:2px 8px;cursor:default">${trendLabel}</span>`;
-    return `<tr onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}"${isActive?' class="active"':''}>
+    const scoreInfo  = r.trend.maxScore > 0 ? ` title="${r.trend.score}/${r.trend.maxScore}点 (${r.trend.dataPoints}件)"` : '';
+    const trendHtml  = `<span class="signal-badge sig-${r.trend.cls}"${scoreInfo} style="font-size:10px;padding:2px 8px;cursor:default">${trendLabel}</span>`;
+    const isActive   = r.apparel_id == activeApId;
+    return `<tr class="${isActive?'active':''}" onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}">
       <td><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name||'—'}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</td>
       <td style="text-align:center">${rarityBadge(r.rarity)}</td>
       <td style="color:var(--text3);font-size:11px">${r.rank?'#'+r.rank:'—'}</td>
@@ -453,36 +515,111 @@ function renderTableBody() {
   }).join('');
 }
 
+/* ----- モバイル: カードブロック ----- */
+function renderCards(sorted) {
+  return sorted.map(r => {
+    const meta = [r.set_name, r.collection_no].filter(Boolean).join(' · ');
+    const dodHtml = r.dod !== null
+      ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'▲':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
+      : '<span class="chg flat">—</span>';
+    const trendLabel  = TREND_LABEL_MAP[r.trend.cls] || '—';
+    const scoreInfo   = r.trend.maxScore > 0 ? ` title="${r.trend.score}/${r.trend.maxScore}点"` : '';
+    const isActive    = r.apparel_id == activeApId;
+
+    const buyHtml = (r.snkr || r.mcr) ? `
+      <div class="card-block-buy">
+        ${r.snkr ? `<div class="card-buy-item"><span class="card-buy-label">SNKR上限</span><span class="card-buy-val">${fmt(r.snkr)}</span></div>` : ''}
+        ${r.mcr  ? `<div class="card-buy-item"><span class="card-buy-label">メルカリ上限</span><span class="card-buy-val">${fmt(r.mcr)}</span></div>` : ''}
+      </div>` : '';
+
+    return `<tr class="card-row${isActive?' active':''}" onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}">
+      <td>
+        <div class="card-block">
+          <!-- 上段: カード名 + バッジ -->
+          <div class="card-block-header">
+            <div class="card-block-name">
+              <a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name||'—'}</a>
+              ${meta ? `<div class="card-meta">${meta}</div>` : ''}
+            </div>
+            <div class="card-block-badges">
+              ${rarityBadge(r.rarity)}
+              <span class="signal-badge sig-${r.trend.cls}"${scoreInfo} style="font-size:10px;padding:2px 7px">${trendLabel}</span>
+            </div>
+          </div>
+          <!-- 中段: ランク / 件数 / 前日比 -->
+          <div class="card-block-meta-row">
+            <span style="color:var(--text3)">${r.rank ? '#'+r.rank+' ランク' : 'ランク—'}</span>
+            <span style="color:var(--blue)">${r.cnt}${r.has_more?'+':''} 件</span>
+            <span>前日比: ${dodHtml}</span>
+          </div>
+          <!-- 価格グリッド -->
+          <div class="card-block-prices">
+            <div class="card-price-item">
+              <span class="card-price-label">高値</span>
+              <span class="card-price-val" style="color:var(--red)">${fmt(r.mx)}</span>
+            </div>
+            <div class="card-price-item">
+              <span class="card-price-label">安値</span>
+              <span class="card-price-val" style="color:var(--green)">${fmt(r.mn)}</span>
+            </div>
+            <div class="card-price-item">
+              <span class="card-price-label">平均</span>
+              <span class="card-price-val">${fmt(r.avg)}</span>
+            </div>
+          </div>
+          <!-- 下段: 仕入上限 -->
+          ${buyHtml}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== SORT =====
 function setSort(col) {
-  sortDir = (sortCol === col) ? -sortDir : (col==='rank'?1:-1);
+  sortDir = (sortCol === col) ? -sortDir : (col === 'rank' ? 1 : -1);
   sortCol = col;
   ['rank','cnt','mx','mn','avg','dod','trendScore'].forEach(c => {
     const th = document.getElementById('th-'+c);
     const si = document.getElementById('si-'+c);
-    if (th) th.classList.toggle('sort-active', c===col);
-    if (si) si.textContent = c===col ? (sortDir===-1?'↓':'↑') : '';
+    if (th) th.classList.toggle('sort-active', c === col);
+    if (si) si.textContent = c === col ? (sortDir === -1 ? '↓' : '↑') : '';
   });
+  // モバイルソートセレクトも同期
+  const mss = document.getElementById('mobileSortSelect');
+  if (mss) mss.value = col;
+  const msb = document.getElementById('mobileSortDirBtn');
+  if (msb) msb.textContent = sortDir === -1 ? '↓ 降順' : '↑ 昇順';
   renderTableBody();
 }
 
+function onMobileSortChange() {
+  const col = document.getElementById('mobileSortSelect').value;
+  sortDir = col === 'rank' ? 1 : -1;
+  sortCol = col;
+  document.getElementById('mobileSortDirBtn').textContent = sortDir === -1 ? '↓ 降順' : '↑ 昇順';
+  renderTableBody();
+}
+
+function toggleMobileSortDir() {
+  sortDir = -sortDir;
+  document.getElementById('mobileSortDirBtn').textContent = sortDir === -1 ? '↓ 降順' : '↑ 昇順';
+  renderTableBody();
+}
+
+// ===== RARITY CHIPS =====
 function buildRarityChips() {
-  const rarities = [...new Set(tableData.map(r=>r.rarity).filter(Boolean))].sort();
+  const rarities = [...new Set(tableData.map(r => r.rarity).filter(Boolean))].sort();
   const container = document.getElementById('rarityChips');
   container.innerHTML = '';
-  ['all',...rarities].forEach(r => {
+  ['all', ...rarities].forEach(r => {
     const btn = document.createElement('button');
-    btn.className = 'chip' + (r==='all'?' active':'');
-    btn.textContent = r==='all'?'ALL':r;
+    btn.className = 'chip' + (r === 'all' ? ' active' : '');
+    btn.textContent = r === 'all' ? 'ALL' : r;
     btn.dataset.rarity = r;
-    btn.onclick = () => setRarityFilter(r);
+    btn.onclick = () => { filterRarity = r; document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.rarity === r)); renderTableBody(); };
     container.appendChild(btn);
   });
-}
-
-function setRarityFilter(r) {
-  filterRarity = r;
-  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.rarity===r));
-  renderTableBody();
 }
 
 // ===== CHART SELECT =====
@@ -491,217 +628,118 @@ function buildCardSelect() {
     FROM ranking_transactions GROUP BY apparel_id ORDER BY MIN(rank)`);
   allOptions = cards.map(c => {
     const meta = [c.set_name, c.collection_no].filter(Boolean).join(' · ');
-    return { value: String(c.apparel_id), text: `#${c.rank||'?'} ${c.card_name}${meta?'  ['+meta+']':''}`, cardName: c.card_name||'' };
+    return { value: String(c.apparel_id), text: `#${c.rank||'?'} ${c.card_name}${meta ? '  ['+meta+']' : ''}`, cardName: c.card_name||'' };
   });
   populateSelect(allOptions);
 }
-
 function populateSelect(opts) {
-  document.getElementById('cardSelect').innerHTML = opts.map(o =>
-    `<option value="${escJs(o.value)}">${o.text}</option>`).join('');
+  document.getElementById('cardSelect').innerHTML = opts.map(o => `<option value="${escJs(o.value)}">${o.text}</option>`).join('');
 }
-
 function filterChartSelect(txt) {
   const lower = txt.toLowerCase().trim();
   const filtered = lower ? allOptions.filter(o => o.text.toLowerCase().includes(lower)) : allOptions;
   populateSelect(filtered);
   if (filtered.length) { document.getElementById('cardSelect').value = filtered[0].value; renderChart(); }
 }
-
 function onSelectChange() { renderChart(); }
 
 function selectCard(apId, rowEl) {
-  if (activeRow) activeRow.classList.remove('active');
+  activeApId = String(apId);
+  // active クラスの付け替え
+  document.querySelectorAll('#tableBody tr').forEach(tr => tr.classList.remove('active'));
   rowEl.classList.add('active');
-  activeRow = rowEl;
+  // チャート更新
   populateSelect(allOptions);
   document.getElementById('chartSearchInput').value = '';
-  document.getElementById('cardSelect').value = String(apId);
+  document.getElementById('cardSelect').value = activeApId;
   renderChart();
   document.getElementById('chartPanel').scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
-function toggleLabels() {
-  showPriceLabels = !showPriceLabels;
-  renderChart();
-}
+function toggleLabels() { showPriceLabels = !showPriceLabels; renderChart(); }
 
 // ===== CHART =====
 function renderChart() {
   const apId = document.getElementById('cardSelect').value;
   if (!apId) return;
-
-  const rows = q('SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date', [apId]);
-  const stats = q('SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM ranking_transactions WHERE apparel_id=?', [apId])[0];
-  const change24h = getTimeWindowChange(apId, 24);
-  const change48h = getTimeWindowChange(apId, 48);
-
-  const opt = allOptions.find(o => o.value === String(apId));
+  const rows   = q('SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date', [apId]);
+  const stats  = q('SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM ranking_transactions WHERE apparel_id=?', [apId])[0];
+  const ch24   = getTimeWindowChange(apId, 24);
+  const ch48   = getTimeWindowChange(apId, 48);
+  const opt    = allOptions.find(o => o.value === String(apId));
   document.getElementById('chartCardName').textContent = opt ? opt.cardName : '';
-
   const labels = rows.map(r => (r.transaction_date||'').replace('T',' ').substring(5,16));
   const prices = rows.map(r => r.price);
-  const ma5  = calcMA(prices, 5);
-  const ma10 = calcMA(prices, 10);
-  const ma20 = calcMA(prices, 20);
-  const trend = getTrendSignal(prices, ma5, ma10, ma20);
-
-  updateStats(stats, change24h, change48h, trend);
-
+  const ma5    = calcMA(prices, 5);
+  const ma10   = calcMA(prices, 10);
+  const ma20   = calcMA(prices, 20);
+  const trend  = getTrendSignal(prices, ma5, ma10, ma20);
+  updateStats(stats, ch24, ch48, trend);
   if (chartInst) chartInst.destroy();
   if (!prices.length) return;
-
-  const ptRadius = prices.length <= 40 ? 5 : (prices.length <= 100 ? 3 : 2);
-
+  const ptRadius = prices.length <= 40 ? 5 : prices.length <= 100 ? 3 : 2;
   chartInst = new Chart(document.getElementById('priceChart'), {
     data: {
       labels,
       datasets: [
-        {
-          type: 'line',
-          label: '取引価格',
-          data: prices,
-          borderColor: '#e8a020',
-          backgroundColor: 'rgba(232,160,32,0.06)',
-          borderWidth: 2,
-          pointRadius: ptRadius,
-          pointBackgroundColor: '#e8a020',
-          pointBorderColor: '#0f0f0f',
-          pointBorderWidth: 2,
-          tension: 0.2,
-          fill: true,
-          order: 4,
-          datalabels: {
-            display: showPriceLabels ? 'auto' : false,
-            color: '#e8a020',
-            backgroundColor: 'rgba(15,15,15,0.82)',
-            borderRadius: 3,
-            padding: { top:2, bottom:2, left:4, right:4 },
-            font: { size: prices.length > 60 ? 8 : 9, weight: 'bold' },
-            formatter: v => (v != null) ? '¥' + parseInt(v).toLocaleString() : null,
-            anchor: 'end',
-            align: 'top',
-            offset: 3,
-            clamp: true,
-          }
-        },
-        {
-          type: 'line',
-          label: 'MA5',
-          data: ma5,
-          borderColor: '#4caf7d',
-          borderWidth: 1.5,
-          borderDash: [5,3],
-          pointRadius: 0,
-          tension: 0.3,
-          fill: false,
-          spanGaps: false,
-          order: 3,
-          datalabels: { display: false }
-        },
-        {
-          type: 'line',
-          label: 'MA10',
-          data: ma10,
-          borderColor: '#5b9cf6',
-          borderWidth: 1.5,
-          borderDash: [5,3],
-          pointRadius: 0,
-          tension: 0.3,
-          fill: false,
-          spanGaps: false,
-          order: 2,
-          datalabels: { display: false }
-        },
-        {
-          type: 'line',
-          label: 'MA20',
-          data: ma20,
-          borderColor: '#e05555',
-          borderWidth: 1.5,
-          borderDash: [5,3],
-          pointRadius: 0,
-          tension: 0.3,
-          fill: false,
-          spanGaps: false,
-          order: 1,
-          datalabels: { display: false }
-        }
+        { type:'line', label:'取引価格', data:prices,
+          borderColor:'#e8a020', backgroundColor:'rgba(232,160,32,0.06)', borderWidth:2,
+          pointRadius:ptRadius, pointBackgroundColor:'#e8a020', pointBorderColor:'#0f0f0f', pointBorderWidth:2,
+          tension:0.2, fill:true, order:4,
+          datalabels:{ display: showPriceLabels ? 'auto' : false, color:'#e8a020',
+            backgroundColor:'rgba(15,15,15,0.82)', borderRadius:3, padding:{top:2,bottom:2,left:4,right:4},
+            font:{ size: prices.length > 60 ? 8 : 9, weight:'bold' },
+            formatter: v => (v != null) ? '¥'+parseInt(v).toLocaleString() : null,
+            anchor:'end', align:'top', offset:3, clamp:true } },
+        { type:'line', label:'MA5',  data:ma5,  borderColor:'#4caf7d', borderWidth:1.5, borderDash:[5,3], pointRadius:0, tension:0.3, fill:false, spanGaps:false, order:3, datalabels:{display:false} },
+        { type:'line', label:'MA10', data:ma10, borderColor:'#5b9cf6', borderWidth:1.5, borderDash:[5,3], pointRadius:0, tension:0.3, fill:false, spanGaps:false, order:2, datalabels:{display:false} },
+        { type:'line', label:'MA20', data:ma20, borderColor:'#e05555', borderWidth:1.5, borderDash:[5,3], pointRadius:0, tension:0.3, fill:false, spanGaps:false, order:1, datalabels:{display:false} }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+      responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
       plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              const v = ctx.raw;
-              if (v === null) return null;
-              return ctx.dataset.label + ': ¥' + parseInt(v).toLocaleString();
-            }
-          }
-        },
-        datalabels: { display: false }  // MA線などのデフォルトは非表示、dataset側で上書き
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label: ctx => ctx.raw === null ? null : ctx.dataset.label+': ¥'+parseInt(ctx.raw).toLocaleString() } },
+        datalabels:{ display:false }
       },
       scales: {
-        x: { ticks:{ color:'#666', font:{size:11}, maxTicksLimit:10, maxRotation:30 }, grid:{ color:'rgba(255,255,255,0.05)' } },
-        y: {
-          ticks:{ color:'#666', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(0)+'万' : '¥'+v.toLocaleString() },
-          grid:{ color:'rgba(255,255,255,0.05)' }
-        }
+        x:{ ticks:{ color:'#666', font:{size:11}, maxTicksLimit:10, maxRotation:30 }, grid:{ color:'rgba(255,255,255,0.05)' } },
+        y:{ ticks:{ color:'#666', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(0)+'万' : '¥'+v.toLocaleString() }, grid:{ color:'rgba(255,255,255,0.05)' } }
       }
     }
   });
-
-  // Legend
   document.getElementById('chartLegend').innerHTML = `
-    <div class="legend-item"><div class="legend-line" style="background:#e8a020;height:2px"></div>取引価格</div>
-    <div class="legend-item" style="color:#4caf7d"><div class="legend-line legend-dashed" style="color:#4caf7d;height:0;border-top:2px dashed #4caf7d;width:20px"></div>MA5${trend.lastMA5?'  '+fmt(trend.lastMA5):'  —'}</div>
-    <div class="legend-item" style="color:#5b9cf6"><div class="legend-line legend-dashed" style="color:#5b9cf6;height:0;border-top:2px dashed #5b9cf6;width:20px"></div>MA10${trend.lastMA10?'  '+fmt(trend.lastMA10):'  —'}</div>
-    <div class="legend-item" style="color:#e05555"><div class="legend-line legend-dashed" style="color:#e05555;height:0;border-top:2px dashed #e05555;width:20px"></div>MA20${trend.lastMA20?'  '+fmt(trend.lastMA20):'  —'}</div>
-  `;
+    <div class="legend-item"><div style="width:20px;height:2px;background:#e8a020;border-radius:2px"></div>取引価格</div>
+    <div class="legend-item" style="color:#4caf7d"><div style="width:20px;border-top:2px dashed #4caf7d"></div>MA5${trend.lastMA5 ? '  '+fmt(trend.lastMA5) : '  —'}</div>
+    <div class="legend-item" style="color:#5b9cf6"><div style="width:20px;border-top:2px dashed #5b9cf6"></div>MA10${trend.lastMA10 ? '  '+fmt(trend.lastMA10) : '  —'}</div>
+    <div class="legend-item" style="color:#e05555"><div style="width:20px;border-top:2px dashed #e05555"></div>MA20${trend.lastMA20 ? '  '+fmt(trend.lastMA20) : '  —'}</div>`;
 }
 
-// ===== STATS DISPLAY =====
+// ===== STATS =====
 function updateStats(stats, ch24, ch48, trend) {
-  // Row1: 基本
   document.getElementById('statsRow1').innerHTML = stats ? `
     <div class="stat-box"><div class="stat-box-label">高値</div><div class="stat-box-val" style="color:var(--red)">${fmt(stats.mx)}</div></div>
     <div class="stat-box"><div class="stat-box-label">安値</div><div class="stat-box-val" style="color:var(--green)">${fmt(stats.mn)}</div></div>
     <div class="stat-box"><div class="stat-box-label">平均</div><div class="stat-box-val">${fmt(stats.avg)}</div></div>
-    <div class="stat-box"><div class="stat-box-label">件数</div><div class="stat-box-val" style="color:var(--text2)">${stats.cnt||0}件</div></div>
-  ` : '';
-
-  // Row2: 時間変化
-  document.getElementById('statsRow2').innerHTML =
-    fmtChangeBox(ch24, '24h変化') + fmtChangeBox(ch48, '48h変化');
-
-  // Signal row
-  const sigCls = `signal-badge sig-${trend.cls}`;
+    <div class="stat-box"><div class="stat-box-label">件数</div><div class="stat-box-val" style="color:var(--text2)">${stats.cnt||0}件</div></div>` : '';
+  document.getElementById('statsRow2').innerHTML = fmtChangeBox(ch24,'24h変化') + fmtChangeBox(ch48,'48h変化');
+  const needMore = trend.dataPoints < 20 ? `<span style="font-size:10px;color:var(--text3)">(${trend.dataPoints}件/20件)</span>` : '';
   const scoreStr = trend.maxScore > 0 ? `${trend.score}/${trend.maxScore}` : '';
-  const needMore = trend.dataPoints < 20 ? `<span style="font-size:10px;color:var(--text3)"> (${trend.dataPoints}件/20件)</span>` : '';
   document.getElementById('signalRow').innerHTML = `
     <span class="signal-label-text">トレンド判定:</span>
-    <span class="${sigCls}">${trend.signal}</span>
+    <span class="signal-badge sig-${trend.cls}">${trend.signal}</span>
     ${scoreStr ? `<span class="signal-score">(${scoreStr})</span>` : ''}
     ${needMore}
-    <button class="label-toggle-btn${showPriceLabels?' active':''}" onclick="toggleLabels()">💰 金額ラベル</button>
-  `;
+    <button class="label-toggle-btn${showPriceLabels?' active':''}" onclick="toggleLabels()">💰 金額ラベル</button>`;
 }
 
 function fmtChangeBox(ch, label) {
-  if (!ch || ch.count === 0) {
+  if (!ch || ch.count === 0)
     return `<div class="stat-box"><div class="stat-box-label">${label}</div><div class="stat-box-val" style="color:var(--text3)">取引なし</div></div>`;
-  }
-  if (ch.diff === null) {
+  if (ch.diff === null)
     return `<div class="stat-box"><div class="stat-box-label">${label}</div><div class="stat-box-val" style="color:var(--text2)">${fmt(ch.price)}</div><div class="stat-box-sub">1件のみ</div></div>`;
-  }
-  const isUp = ch.diff >= 0;
-  const clr = isUp ? 'var(--green)' : 'var(--red)';
-  const arr = isUp ? '▲' : '▼';
+  const isUp = ch.diff >= 0, clr = isUp ? 'var(--green)' : 'var(--red)', arr = isUp ? '▲' : '▼';
   return `<div class="stat-box">
     <div class="stat-box-label">${label} (${ch.count}件)</div>
     <div class="stat-box-val" style="color:${clr}">${arr}${Math.abs(ch.pct).toFixed(1)}%</div>
@@ -710,14 +748,18 @@ function fmtChangeBox(ch, label) {
 }
 
 // ===== EVENTS =====
-document.getElementById('tableSearch').addEventListener('input', function() {
-  filterText = this.value; renderTableBody();
-});
-document.getElementById('chartSearchInput').addEventListener('input', function() {
-  filterChartSelect(this.value);
-});
-window.addEventListener('scroll', () => {
-  document.getElementById('scrollTopBtn').classList.toggle('show', window.scrollY > 300);
+document.getElementById('tableSearch').addEventListener('input', function() { filterText = this.value; renderTableBody(); });
+document.getElementById('chartSearchInput').addEventListener('input', function() { filterChartSelect(this.value); });
+window.addEventListener('scroll', () => { document.getElementById('scrollTopBtn').classList.toggle('show', window.scrollY > 300); });
+
+// リサイズ時にテーブル/カードを切替
+window.addEventListener('resize', () => {
+  const nowMobile = isMobile();
+  const wasMobile = lastWidth < 768;
+  lastWidth = window.innerWidth;
+  if (nowMobile !== wasMobile && document.getElementById('mainView').style.display !== 'none') {
+    renderTableBody();
+  }
 });
 
 loadData();
