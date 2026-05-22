@@ -77,7 +77,7 @@
   .search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;}
   .search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 10px 7px 32px;border-radius:var(--radius);font-size:13px;outline:none;transition:border-color .15s;}
   .search-input:focus{border-color:var(--accent2);}
-  .filter-chips{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px;}
+  .filter-chips{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px;min-width:0;}
   .filter-chips::-webkit-scrollbar{display:none;}
   .chip{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap;}
   .chip:hover{border-color:var(--accent2);color:var(--text);}
@@ -188,6 +188,10 @@
     /* filter bar: search full-width, chips below */
     .filter-bar{flex-wrap:wrap;}
     .search-wrap{flex:1 1 100%;min-width:0;}
+    /* chips: flex itemとして幅を正しく縮める */
+    .filter-chips{flex:1;min-width:0;}
+    /* card-row を明示的にblockにしてコンテナ幅に収める */
+    .card-row{display:block;width:100%;}
   }
   @media(min-width:768px){
     /* hide-mobile classを有効に */
@@ -468,15 +472,30 @@ function buildTable() {
   const trendMap = buildTrendMap();
   const rows = q(`SELECT apparel_id, card_name, rarity, set_name, collection_no, url,
     MIN(rank) as rank, COUNT(*) as cnt, MAX(price) as mx, MIN(price) as mn,
-    CAST(AVG(price) AS INT) as avg, MAX(has_more) as has_more
+    CAST(AVG(price) AS INT) as avg
     FROM ranking_transactions GROUP BY apparel_id`);
+
+  // has_more は「最新の収集日」のフィルター後件数で判定する（過去の最大値ではなく当日分）
+  // 最新収集日ごとのカード別 has_more を取得
+  const hasMoreRows = q(`
+    SELECT t.apparel_id, MAX(t.has_more) as has_more
+    FROM ranking_transactions t
+    INNER JOIN (
+      SELECT apparel_id, MAX(collected_date) as max_date
+      FROM ranking_transactions GROUP BY apparel_id
+    ) latest ON t.apparel_id = latest.apparel_id AND t.collected_date = latest.max_date
+    GROUP BY t.apparel_id`);
+  const hasMoreMap = {};
+  hasMoreRows.forEach(r => { hasMoreMap[r.apparel_id] = r.has_more; });
+
   tableData = rows.map(r => {
     const dod = dodMap[r.apparel_id];
     const dod_pct = (dod && dod.length >= 2) ? (dod[0]-dod[1])/dod[1]*100 : null;
     const snkr = r.avg > 0 ? Math.floor((r.avg*0.907-240)/1.10) : null;
     const mcr  = r.avg > 0 ? Math.floor((r.avg*0.900-160)/1.10) : null;
     const trend = trendMap[r.apparel_id] || { cls:'no-data', score:0, maxScore:0, dataPoints:0 };
-    return { ...r, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null,
+    const has_more = hasMoreMap[r.apparel_id] || 0;
+    return { ...r, has_more, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null,
              trend, trendScore: TREND_SCORE_MAP[trend.cls] ?? 0 };
   });
   renderTableBody();
