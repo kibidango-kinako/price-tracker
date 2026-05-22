@@ -382,17 +382,23 @@ function getTimeWindowChange(apId, hours) {
   const maxRes = q('SELECT MAX(transaction_date) as d FROM ranking_transactions WHERE apparel_id=?', [apId]);
   if (!maxRes.length || !maxRes[0].d) return null;
   const maxDate = maxRes[0].d;
+  // 同一 transaction_date に複数取引がある場合、個別行の first/last は順序不定になるため
+  // 時刻バケット（分単位）ごとに AVG を取り、最古バケットと最新バケットの平均価格を比較する
   const rows = q(
-    `SELECT price FROM ranking_transactions
+    `SELECT transaction_date, CAST(AVG(price) AS INT) as avg_p, COUNT(*) as cnt
+     FROM ranking_transactions
      WHERE apparel_id=? AND transaction_date >= datetime(?, '-${hours} hours')
+     GROUP BY transaction_date
      ORDER BY transaction_date ASC`,
     [apId, maxDate]
   );
   if (!rows.length) return { count:0, diff:null };
-  if (rows.length === 1) return { count:1, diff:null, price:rows[0].price };
-  const oldest = rows[0].price, newest = rows[rows.length-1].price;
+  const totalCnt = rows.reduce((a, r) => a + r.cnt, 0);
+  if (rows.length === 1) return { count:totalCnt, diff:null, price:rows[0].avg_p };
+  const oldest = rows[0].avg_p;
+  const newest = rows[rows.length - 1].avg_p;
   const diff = newest - oldest;
-  return { oldest, newest, diff, pct:(diff/oldest)*100, count:rows.length };
+  return { oldest, newest, diff, pct:(diff/oldest)*100, count:totalCnt };
 }
 
 // ===== TREND SIGNAL =====
@@ -446,8 +452,10 @@ function buildDashboard() {
 
 // ===== TABLE DATA =====
 function buildDodMap() {
-  const rows = q(`SELECT apparel_id, collected_date, CAST(AVG(price) AS INT) as da
-    FROM ranking_transactions GROUP BY apparel_id, collected_date ORDER BY apparel_id, collected_date DESC`);
+  // collected_date(収集日)ではなく DATE(transaction_date)(実取引日)で日別平均を比較する
+  // → collected_dateが1日分しかなくても実取引が複数日にまたがっていれば前日比を計算できる
+  const rows = q(`SELECT apparel_id, DATE(transaction_date) as tx_day, CAST(AVG(price) AS INT) as da
+    FROM ranking_transactions GROUP BY apparel_id, DATE(transaction_date) ORDER BY apparel_id, tx_day DESC`);
   const map = {};
   rows.forEach(r => {
     if (!map[r.apparel_id]) map[r.apparel_id] = [];
@@ -706,7 +714,12 @@ function toggleChartPanel() {
 function renderChart() {
   const apId = document.getElementById('cardSelect').value;
   if (!apId) return;
-  const rows   = q('SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date', [apId]);
+  // グラフは最新取引から最大7日（168時間）分を表示
+  const maxDateRes = q('SELECT MAX(transaction_date) as d FROM ranking_transactions WHERE apparel_id=?', [apId]);
+  const maxDate = maxDateRes.length ? maxDateRes[0].d : null;
+  const rows = maxDate
+    ? q('SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? AND transaction_date >= datetime(?,\'-168 hours\') ORDER BY transaction_date', [apId, maxDate])
+    : [];
   const stats  = q('SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM ranking_transactions WHERE apparel_id=?', [apId])[0];
   const ch24   = getTimeWindowChange(apId, 24);
   const ch48   = getTimeWindowChange(apId, 48);
