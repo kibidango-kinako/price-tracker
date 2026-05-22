@@ -128,25 +128,25 @@
   .mobile-sort-btn:hover{border-color:var(--accent2);}
 
   /* ===== CARD BLOCK (mobile) ===== */
-  .card-block{padding:12px;}
-  .card-block-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+  .card-block{padding:8px 10px;}
+  .card-block-header{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:5px;}
   .card-block-name{flex:1;min-width:0;}
-  .card-block-name .card-link{font-size:13px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .card-block-name .card-meta{font-size:10px;margin-top:3px;}
-  .card-block-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
-  .card-block-meta-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;}
-  .card-block-prices{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--bg3);border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+  .card-block-name .card-link{font-size:12px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-block-name .card-meta{font-size:9px;margin-top:2px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-block-badges{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+  .card-block-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:10px;flex-wrap:wrap;}
+  .card-block-prices{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--bg3);border-radius:6px;padding:5px 8px;margin-bottom:5px;}
   .card-price-item{display:flex;flex-direction:column;}
-  .card-price-label{font-size:9px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em;}
-  .card-price-val{font-size:13px;font-weight:700;}
-  .card-block-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
-  .card-block-buy{display:flex;gap:10px;font-size:11px;flex-wrap:wrap;}
+  .card-price-label{font-size:9px;color:var(--text3);margin-bottom:1px;text-transform:uppercase;letter-spacing:.03em;}
+  .card-price-val{font-size:12px;font-weight:700;}
+  .card-block-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;}
+  .card-block-buy{display:flex;gap:8px;font-size:10px;flex-wrap:wrap;}
   .card-buy-item{display:flex;flex-direction:column;}
   .card-buy-label{font-size:9px;color:var(--text3);margin-bottom:1px;}
   .card-buy-val{color:var(--text2);font-weight:600;}
 
   /* card row override styles */
-  .card-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s;}
+  .card-row{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s;}
   .card-row:hover{border-color:var(--border2);}
   .card-row.active{border-color:var(--accent) !important;background:rgba(232,160,32,.04);}
   .card-row.active .card-link{color:var(--accent);}
@@ -174,8 +174,6 @@
     tbody{display:block;}
     /* mobile sort bar を表示 */
     .mobile-sort-bar{display:flex;}
-    /* hide-desktop classを有効に */
-    .hide-desktop{display:none!important;}
   }
   @media(min-width:768px){
     /* hide-mobile classを有効に */
@@ -240,8 +238,8 @@
         <span class="result-count" id="resultCount"></span>
       </div>
 
-      <!-- モバイル用ソート (hide-desktop) -->
-      <div class="mobile-sort-bar hide-desktop" id="mobileSortBar">
+      <!-- モバイル用ソート（.mobile-sort-barのCSS側で表示制御） -->
+      <div class="mobile-sort-bar" id="mobileSortBar">
         <label>並替:</label>
         <select id="mobileSortSelect" onchange="onMobileSortChange()">
           <option value="dod">前日比</option>
@@ -698,6 +696,7 @@ function renderChart() {
     },
     options: {
       responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
+      layout:{ padding:{ top:28 } },
       plugins: {
         legend:{ display:false },
         tooltip:{ callbacks:{ label: ctx => ctx.raw === null ? null : ctx.dataset.label+': ¥'+parseInt(ctx.raw).toLocaleString() } },
@@ -705,7 +704,7 @@ function renderChart() {
       },
       scales: {
         x:{ ticks:{ color:'#666', font:{size:11}, maxTicksLimit:10, maxRotation:30 }, grid:{ color:'rgba(255,255,255,0.05)' } },
-        y:{ ticks:{ color:'#666', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(0)+'万' : '¥'+v.toLocaleString() }, grid:{ color:'rgba(255,255,255,0.05)' } }
+        y:{ grace:'15%', ticks:{ color:'#666', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(0)+'万' : '¥'+v.toLocaleString() }, grid:{ color:'rgba(255,255,255,0.05)' } }
       }
     }
   });
