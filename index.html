@@ -475,18 +475,18 @@ function buildTable() {
     CAST(AVG(price) AS INT) as avg
     FROM ranking_transactions GROUP BY apparel_id`);
 
-  // has_more は「最新の収集日」のフィルター後件数で判定する（過去の最大値ではなく当日分）
-  // 最新収集日ごとのカード別 has_more を取得
-  const hasMoreRows = q(`
-    SELECT t.apparel_id, MAX(t.has_more) as has_more
+  // has_more: DBの has_more 列は過去の誤ったデータが残っているため使わない
+  // 最新収集日の実際の件数をカウントし、24件以上なら has_more=1 と判定する
+  const latestCntRows = q(`
+    SELECT t.apparel_id, COUNT(*) as latest_cnt
     FROM ranking_transactions t
     INNER JOIN (
       SELECT apparel_id, MAX(collected_date) as max_date
       FROM ranking_transactions GROUP BY apparel_id
     ) latest ON t.apparel_id = latest.apparel_id AND t.collected_date = latest.max_date
     GROUP BY t.apparel_id`);
-  const hasMoreMap = {};
-  hasMoreRows.forEach(r => { hasMoreMap[r.apparel_id] = r.has_more; });
+  const latestCntMap = {};
+  latestCntRows.forEach(r => { latestCntMap[r.apparel_id] = r.latest_cnt; });
 
   tableData = rows.map(r => {
     const dod = dodMap[r.apparel_id];
@@ -494,7 +494,8 @@ function buildTable() {
     const snkr = r.avg > 0 ? Math.floor((r.avg*0.907-240)/1.10) : null;
     const mcr  = r.avg > 0 ? Math.floor((r.avg*0.900-160)/1.10) : null;
     const trend = trendMap[r.apparel_id] || { cls:'no-data', score:0, maxScore:0, dataPoints:0 };
-    const has_more = hasMoreMap[r.apparel_id] || 0;
+    // 最新収集日の件数が24件以上のときのみ + 表示
+    const has_more = (latestCntMap[r.apparel_id] || 0) >= 24 ? 1 : 0;
     return { ...r, has_more, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null,
              trend, trendScore: TREND_SCORE_MAP[trend.cls] ?? 0 };
   });
