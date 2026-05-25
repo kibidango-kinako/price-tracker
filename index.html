@@ -527,7 +527,7 @@ function getFilteredSorted() {
       if (!h.includes(txt)) return false;
     }
     if (filterRarity !== 'all' && r.rarity !== filterRarity) return false;
-    if (filterSet !== 'all' && r.set_name !== filterSet) return false;
+    if (filterSet !== 'all' && extractPokemonName(r.card_name) !== filterSet) return false;
     return true;
   });
   return [...filtered].sort((a,b) => {
@@ -672,12 +672,19 @@ function buildRarityChips() {
   });
 }
 
-// ===== SET FILTER =====
+// ===== POKEMON NAME FILTER =====
+function extractPokemonName(cardName) {
+  if (!cardName) return null;
+  // 先頭の日本語部分（カタカナ・ひらがな・漢字）を抽出
+  // & でつながるタッグカードはそのまま含める (例: イーブイ&カビゴン)
+  const m = cardName.match(/^([぀-ヿ一-鿿]+(?:[&＆][぀-ヿ一-鿿]+)*)/);
+  return m ? m[1] : cardName;
+}
 function buildSetFilter() {
-  const sets = [...new Set(tableData.map(r => r.set_name).filter(Boolean))].sort();
+  const names = [...new Set(tableData.map(r => extractPokemonName(r.card_name)).filter(Boolean))].sort();
   const sel = document.getElementById('setFilter');
-  sel.innerHTML = `<option value="all">弾名: すべて</option>` +
-    sets.map(s => `<option value="${escJs(s)}">${s}</option>`).join('');
+  sel.innerHTML = `<option value="all">ポケモン: すべて</option>` +
+    names.map(n => `<option value="${escJs(n)}">${n}</option>`).join('');
   sel.value = filterSet;
 }
 function onSetFilterChange() {
