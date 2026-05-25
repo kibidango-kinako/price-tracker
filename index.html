@@ -83,6 +83,8 @@
   .chip:hover{border-color:var(--accent2);color:var(--text);}
   .chip.active{background:var(--accent);border-color:var(--accent);color:#000;}
   .result-count{font-size:12px;color:var(--text3);white-space:nowrap;}
+  .set-filter-wrap{flex:0 0 auto;}
+  .set-filter-wrap select{padding:5px 8px;font-size:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);outline:none;cursor:pointer;max-width:220px;}
 
   /* ===== RARITY BADGES ===== */
   .rarity{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:.03em;white-space:nowrap;}
@@ -190,6 +192,9 @@
     .search-wrap{flex:1 1 100%;min-width:0;}
     /* chips: flex itemとして幅を正しく縮める */
     .filter-chips{flex:1;min-width:0;}
+    /* セットフィルター: モバイルでは幅を抑える */
+    .set-filter-wrap{flex:0 0 auto;}
+    .set-filter-wrap select{max-width:140px;font-size:11px;padding:4px 6px;}
     /* card-row を明示的にblockにしてコンテナ幅に収める */
     .card-row{display:block;width:100%;}
   }
@@ -255,7 +260,10 @@
       <!-- フィルターバー -->
       <div class="filter-bar">
         <div class="search-wrap">
-          <input class="search-input" type="text" id="tableSearch" placeholder="カード名・弾名で絞り込み">
+          <input class="search-input" type="text" id="tableSearch" placeholder="カード名で絞り込み">
+        </div>
+        <div class="set-filter-wrap">
+          <select id="setFilter" onchange="onSetFilterChange()"></select>
         </div>
         <div class="filter-chips" id="rarityChips"></div>
         <span class="result-count" id="resultCount"></span>
@@ -281,7 +289,7 @@
         <table>
           <thead>
             <tr>
-              <th style="text-align:left;min-width:160px">カード名 / 弾・No.</th>
+              <th style="text-align:left;min-width:160px">カード名 / 弾名</th>
               <th style="min-width:48px">レア</th>
               <th class="sortable" onclick="setSort('rank')"       id="th-rank">ランク<span class="sort-icon" id="si-rank"></span></th>
               <th class="sortable" onclick="setSort('cnt')"        id="th-cnt">件数<span class="sort-icon" id="si-cnt"></span></th>
@@ -313,7 +321,7 @@ const DB_URL = 'https://raw.githubusercontent.com/kibidango-kinako/price-tracker
 let db = null, chartInst = null, activeApId = null;
 let tableData = [], allOptions = [];
 let sortCol = 'dod', sortDir = -1;
-let filterRarity = 'all', filterText = '';
+let filterRarity = 'all', filterText = '', filterSet = 'all';
 let showPriceLabels = true;
 let chartPanelOpen = true; // will be set by buildDashboard
 let lastWidth = window.innerWidth;
@@ -439,6 +447,7 @@ function buildDashboard() {
   buildTable();
   buildCardSelect();
   buildRarityChips();
+  buildSetFilter();
   // モバイルではチャートパネルを折りたたんでリスト優先
   if (isMobile()) {
     chartPanelOpen = false;
@@ -514,10 +523,11 @@ function getFilteredSorted() {
   const filtered = tableData.filter(r => {
     const txt = filterText.trim().toLowerCase();
     if (txt) {
-      const h = ((r.card_name||'')+' '+(r.set_name||'')+' '+(r.collection_no||'')).toLowerCase();
+      const h = ((r.card_name||'')+' '+(r.set_name||'')+' '+(r.collection_no||'')+' '+(r.rarity||'')).toLowerCase();
       if (!h.includes(txt)) return false;
     }
     if (filterRarity !== 'all' && r.rarity !== filterRarity) return false;
+    if (filterSet !== 'all' && r.set_name !== filterSet) return false;
     return true;
   });
   return [...filtered].sort((a,b) => {
@@ -551,16 +561,17 @@ function renderTableBody() {
 /* ----- デスクトップ: テーブル行 ----- */
 function renderRows(sorted) {
   return sorted.map(r => {
-    const meta = [r.set_name, r.collection_no].filter(Boolean).join(' · ');
+    const fullName = (r.card_name || '—') + (r.rarity ? ' ' + r.rarity : '') + (r.collection_no ? ' [' + r.collection_no + ']' : '');
+    const meta = r.set_name || '';
     const dodHtml = r.dod !== null
-      ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'▲':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
+      ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'+':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
       : '<span class="chg flat">—</span>';
     const trendLabel = TREND_LABEL_MAP[r.trend.cls] || '—';
     const scoreInfo  = r.trend.maxScore > 0 ? ` title="${r.trend.score}/${r.trend.maxScore}点 (${r.trend.dataPoints}件)"` : '';
     const trendHtml  = `<span class="signal-badge sig-${r.trend.cls}"${scoreInfo} style="font-size:10px;padding:2px 8px;cursor:default">${trendLabel}</span>`;
     const isActive   = r.apparel_id == activeApId;
     return `<tr class="${isActive?'active':''}" onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}">
-      <td><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name||'—'}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</td>
+      <td><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${fullName}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</td>
       <td style="text-align:center">${rarityBadge(r.rarity)}</td>
       <td style="color:var(--text3);font-size:11px">${r.rank?'#'+r.rank:'—'}</td>
       <td style="color:var(--blue)">${r.cnt}${r.has_more?'<sup style="color:var(--accent);font-size:9px;margin-left:1px">+</sup>':''}</td>
@@ -578,8 +589,9 @@ function renderRows(sorted) {
 /* ----- モバイル: コンパクトカード (3行レイアウト) ----- */
 function renderCards(sorted) {
   return sorted.map(r => {
+    const fullName = (r.card_name || '—') + (r.rarity ? ' ' + r.rarity : '') + (r.collection_no ? ' [' + r.collection_no + ']' : '');
     const dodHtml = r.dod !== null
-      ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'▲':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
+      ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'+':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
       : '<span class="chg flat">—</span>';
     const trendLabel = TREND_LABEL_MAP[r.trend.cls] || '—';
     const isActive   = r.apparel_id == activeApId;
@@ -590,11 +602,10 @@ function renderCards(sorted) {
     return `<tr class="card-row${isActive?' active':''}" onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}">
       <td>
         <div class="mc-card">
-          <!-- 行1: レア+カード名 | トレンド判定 -->
+          <!-- 行1: カード名（レア+No.含む） | トレンド判定 -->
           <div class="mc-row1">
             <div class="mc-name-area">
-              ${rarityBadge(r.rarity)}
-              <a class="mc-name" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${r.card_name||'—'}</a>
+              <a class="mc-name" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${fullName}</a>
             </div>
             <span class="signal-badge sig-${r.trend.cls} mc-trend">${trendLabel}</span>
           </div>
@@ -659,6 +670,19 @@ function buildRarityChips() {
     btn.onclick = () => { filterRarity = r; document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.rarity === r)); renderTableBody(); };
     container.appendChild(btn);
   });
+}
+
+// ===== SET FILTER =====
+function buildSetFilter() {
+  const sets = [...new Set(tableData.map(r => r.set_name).filter(Boolean))].sort();
+  const sel = document.getElementById('setFilter');
+  sel.innerHTML = `<option value="all">弾名: すべて</option>` +
+    sets.map(s => `<option value="${escJs(s)}">${s}</option>`).join('');
+  sel.value = filterSet;
+}
+function onSetFilterChange() {
+  filterSet = document.getElementById('setFilter').value;
+  renderTableBody();
 }
 
 // ===== CHART SELECT =====
@@ -797,7 +821,7 @@ function fmtChangeBox(ch, label) {
     return `<div class="stat-box"><div class="stat-box-label">${label}</div><div class="stat-box-val" style="color:var(--text3)">取引なし</div></div>`;
   if (ch.diff === null)
     return `<div class="stat-box"><div class="stat-box-label">${label}</div><div class="stat-box-val" style="color:var(--text2)">${fmt(ch.price)}</div><div class="stat-box-sub">1件のみ</div></div>`;
-  const isUp = ch.diff >= 0, clr = isUp ? 'var(--green)' : 'var(--red)', arr = isUp ? '▲' : '▼';
+  const isUp = ch.diff >= 0, clr = isUp ? 'var(--green)' : 'var(--red)', arr = isUp ? '+' : '▼';
   return `<div class="stat-box">
     <div class="stat-box-label">${label} (${ch.count}件)</div>
     <div class="stat-box-val" style="color:${clr}">${arr}${Math.abs(ch.pct).toFixed(1)}%</div>
