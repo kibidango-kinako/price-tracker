@@ -199,8 +199,6 @@
     .card-row{display:block;width:100%;}
   }
   @media(min-width:768px){
-    /* hide-mobile classを有効に */
-    .hide-mobile{display:none!important;}
     /* card-row はデスクトップでは通常の<tr>と同じ見た目にする */
     .card-row{background:none;border:none;border-radius:0;margin:0;}
     .card-row:hover td{background:rgba(255,255,255,.03);}
@@ -219,7 +217,7 @@
   <div class="header-right">
     <div class="status-dot loading" id="dot"></div>
     <span id="statusText">読み込み中...</span>
-    <button class="reload-btn" onclick="loadData()">更新</button>
+    <button class="reload-btn" onclick="loadData(true)">更新</button>
   </div>
 </div>
 
@@ -245,6 +243,12 @@
           </div>
         </div>
         <select id="cardSelect" onchange="onSelectChange()" style="margin-bottom:10px"></select>
+        <div id="rangeChips" style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="chip range-chip active" data-h="168">7日</button>
+          <button class="chip range-chip" data-h="336">14日</button>
+          <button class="chip range-chip" data-h="720">30日</button>
+          <button class="chip range-chip" data-h="all">全期間</button>
+        </div>
         <div class="stats-row" id="statsRow1"></div>
         <div class="stats-row" id="statsRow2"></div>
         <div class="signal-row" id="signalRow"></div>
@@ -274,11 +278,12 @@
         <label>並替:</label>
         <select id="mobileSortSelect" onchange="onMobileSortChange()">
           <option value="dod">前日比</option>
+          <option value="wow">週比</option>
           <option value="trendScore">判定</option>
-          <option value="avg">平均価格</option>
-          <option value="mx">高値</option>
-          <option value="mn">安値</option>
-          <option value="cnt">件数</option>
+          <option value="med7">7日中央値</option>
+          <option value="mx7">7日高値</option>
+          <option value="mn7">7日安値</option>
+          <option value="cnt7">7日件数</option>
           <option value="rank">ランク</option>
         </select>
         <button class="mobile-sort-btn" id="mobileSortDirBtn" onclick="toggleMobileSortDir()">↓ 降順</button>
@@ -292,14 +297,15 @@
               <th style="text-align:left;min-width:160px">カード名 / 弾名</th>
               <th style="min-width:48px">レア</th>
               <th class="sortable" onclick="setSort('rank')"       id="th-rank">ランク<span class="sort-icon" id="si-rank"></span></th>
-              <th class="sortable" onclick="setSort('cnt')"        id="th-cnt">件数<span class="sort-icon" id="si-cnt"></span></th>
-              <th class="sortable" onclick="setSort('mx')"         id="th-mx">高値<span class="sort-icon" id="si-mx"></span></th>
-              <th class="sortable" onclick="setSort('mn')"         id="th-mn">安値<span class="sort-icon" id="si-mn"></span></th>
-              <th class="sortable" onclick="setSort('avg')"        id="th-avg">平均<span class="sort-icon" id="si-avg"></span></th>
+              <th class="sortable" onclick="setSort('cnt7')"       id="th-cnt7" title="直近7日間の取引件数（流動性の目安）。+は最新収集日に24件以上＝さらに取引がある可能性">7日件数<span class="sort-icon" id="si-cnt7"></span></th>
+              <th class="sortable" onclick="setSort('mx7')"        id="th-mx7" title="直近7日間の最高取引価格">7日高値<span class="sort-icon" id="si-mx7"></span></th>
+              <th class="sortable" onclick="setSort('mn7')"        id="th-mn7" title="直近7日間の最安取引価格">7日安値<span class="sort-icon" id="si-mn7"></span></th>
+              <th class="sortable" onclick="setSort('med7')"       id="th-med7" title="直近7日間の取引価格の中央値（外れ値に強い実勢相場）">7日中央値<span class="sort-icon" id="si-med7"></span></th>
               <th class="sortable sort-active" onclick="setSort('dod')"        id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
+              <th class="sortable" onclick="setSort('wow')"        id="th-wow" title="直近7日中央値 vs その前7日中央値の変化率">週比<span class="sort-icon" id="si-wow"></span></th>
               <th class="sortable" onclick="setSort('trendScore')" id="th-trendScore" title="MA5/10/20によるトレンド判定">判定<span class="sort-icon" id="si-trendScore"></span></th>
-              <th class="hide-mobile" title="スニダン(手数料9.3%+送料¥240)で利益率10%の仕入上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
-              <th class="hide-mobile" title="メルカリ(手数料10%+送料¥160)で利益率10%の仕入上限">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
+              <th class="hide-mobile" title="スニダン(手数料9.3%+送料¥240)で利益率10%が出る仕入上限（直近7日中央値ベース）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
+              <th class="hide-mobile" title="メルカリ(手数料10%+送料¥160)で利益率10%が出る仕入上限（直近7日中央値ベース）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -627,6 +633,7 @@ let tableData = [], allOptions = [];
 let sortCol = 'dod', sortDir = -1;
 let filterRarity = 'all', filterText = '', filterSet = 'all';
 let showPriceLabels = true;
+let chartRangeHours = 168; // チャート表示期間（null = 全期間）
 let chartPanelOpen = true; // will be set by buildDashboard
 let lastWidth = window.innerWidth;
 
@@ -648,6 +655,19 @@ const fmtShort = v => {
   return '¥' + parseInt(v).toLocaleString();
 };
 const escJs  = s => (s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// DBには pandas由来の 'nan' 文字列と、スクレイプ時のHTMLエンティティ(&amp;等)が混在しているため表示前に正規化する
+const cleanField = s => {
+  if (s == null) return null;
+  s = String(s).trim();
+  if (!s || s === 'nan' || s === 'None') return null;
+  return s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'");
+};
+function median(arr) {
+  if (!arr.length) return null;
+  const s = [...arr].sort((a,b) => a-b), m = s.length >> 1;
+  return s.length % 2 ? s[m] : Math.round((s[m-1] + s[m]) / 2);
+}
 function rarityBadge(r) {
   const known = ['SAR','HR','SR','MA','MUR'];
   const cls = known.includes(r) ? 'r-'+r : 'r-other';
@@ -655,12 +675,14 @@ function rarityBadge(r) {
 }
 
 // ===== LOAD =====
-async function loadData() {
+async function loadData(bust = false) {
   setStatus('読み込み中...','loading');
   document.getElementById('loadingView').style.display = 'flex';
   document.getElementById('mainView').style.display = 'none';
   try {
-    const res = await fetch(DB_URL + '?t=' + Date.now());
+    // 初回はCDNキャッシュを活かして高速に読み込む（raw.githubusercontentは約5分でキャッシュ更新）
+    // 「更新」ボタンのときだけキャッシュバスターで最新を強制取得
+    const res = await fetch(DB_URL + (bust ? '?t=' + Date.now() : ''));
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const SQL = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/' + f });
     db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
@@ -788,12 +810,28 @@ function buildTrendMap() {
   return result;
 }
 
+// 直近7日 / その前7日の価格リストをカード別に作る（基準は全体の最新取引日時）
+function buildWeekMap() {
+  const maxD = q('SELECT MAX(transaction_date) as d FROM ranking_transactions')[0].d;
+  const rows = q(`SELECT apparel_id, price,
+      CASE WHEN transaction_date >= datetime(?, '-168 hours') THEN 0 ELSE 1 END as wk
+    FROM ranking_transactions
+    WHERE transaction_date >= datetime(?, '-336 hours')`, [maxD, maxD]);
+  const map = {};
+  rows.forEach(r => {
+    const m = map[r.apparel_id] || (map[r.apparel_id] = [[],[]]);
+    m[r.wk].push(r.price);
+  });
+  return { map, maxD };
+}
+
 function buildTable() {
   const dodMap   = buildDodMap();
   const trendMap = buildTrendMap();
+  const { map: weekMap, maxD } = buildWeekMap();
+  const maxDms = new Date(maxD.replace(' ','T')).getTime();
   const rows = q(`SELECT apparel_id, card_name, rarity, set_name, collection_no, url,
-    MIN(rank) as rank, COUNT(*) as cnt, MAX(price) as mx, MIN(price) as mn,
-    CAST(AVG(price) AS INT) as avg
+    MIN(rank) as rank, COUNT(*) as cnt, MAX(transaction_date) as last_tx
     FROM ranking_transactions GROUP BY apparel_id`);
 
   // has_more: DBの has_more 列は過去の誤ったデータが残っているため使わない
@@ -810,14 +848,30 @@ function buildTable() {
   latestCntRows.forEach(r => { latestCntMap[r.apparel_id] = r.latest_cnt; });
 
   tableData = rows.map(r => {
+    r.card_name     = cleanField(r.card_name);
+    r.rarity        = cleanField(r.rarity);
+    r.set_name      = cleanField(r.set_name);
+    r.collection_no = cleanField(r.collection_no);
+    const wk = weekMap[r.apparel_id] || [[],[]];
+    const cur = wk[0], prev = wk[1];
+    const cnt7 = cur.length;
+    const mx7  = cnt7 ? Math.max(...cur) : null;
+    const mn7  = cnt7 ? Math.min(...cur) : null;
+    const med7 = median(cur);
+    const medPrev = median(prev);
+    const wow = (med7 != null && medPrev != null && medPrev > 0) ? (med7-medPrev)/medPrev*100 : null;
     const dod = dodMap[r.apparel_id];
     const dod_pct = (dod && dod.length >= 2) ? (dod[0]-dod[1])/dod[1]*100 : null;
-    const snkr = r.avg > 0 ? Math.floor((r.avg*0.907-240)/1.10) : null;
-    const mcr  = r.avg > 0 ? Math.floor((r.avg*0.900-160)/1.10) : null;
+    // 仕入上限は直近7日中央値ベース（全期間平均だと上昇/下落局面で古い相場を引きずるため）
+    const snkr = med7 > 0 ? Math.floor((med7*0.907-240)/1.10) : null;
+    const mcr  = med7 > 0 ? Math.floor((med7*0.900-160)/1.10) : null;
     const trend = trendMap[r.apparel_id] || { cls:'no-data', score:0, maxScore:0, dataPoints:0 };
     // 最新収集日の件数が24件以上のときのみ + 表示
     const has_more = (latestCntMap[r.apparel_id] || 0) >= 24 ? 1 : 0;
-    return { ...r, has_more, dod:dod_pct, snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null,
+    // 最終取引からの経過日数（3日以上動きがなければ停滞表示）
+    const staleDays = r.last_tx ? Math.floor((maxDms - new Date(r.last_tx.replace(' ','T')).getTime()) / 86400000) : null;
+    return { ...r, has_more, cnt7, mx7, mn7, med7, wow, dod:dod_pct, staleDays,
+             snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null,
              trend, trendScore: TREND_SCORE_MAP[trend.cls] ?? 0 };
   });
   renderTableBody();
@@ -834,15 +888,16 @@ function getFilteredSorted() {
     if (filterSet !== 'all' && !getPokemonNames(r).includes(filterSet)) return false;
     return true;
   });
+  // sortDir: -1 = 降順（大きい順）, 1 = 昇順（小さい順）。nullは常に末尾
   return [...filtered].sort((a,b) => {
     const va = a[sortCol], vb = b[sortCol];
     if (sortCol === 'rank') {
       if (!va && !vb) return 0; if (!va) return 1; if (!vb) return -1;
-      return sortDir === -1 ? va-vb : vb-va;
+      return sortDir === 1 ? va-vb : vb-va;
     }
     if (va === null && vb === null) return 0;
     if (va === null) return 1; if (vb === null) return -1;
-    return sortDir * (vb - va);
+    return sortDir * (va - vb);
   });
 }
 
@@ -863,26 +918,30 @@ function renderTableBody() {
 }
 
 /* ----- デスクトップ: テーブル行 ----- */
+const chgHtml = (v, prefix='') => v !== null
+  ? `<span class="chg ${v>=0?'up':'down'}">${prefix}${v>=0?'+':'▼'}${Math.abs(v).toFixed(1)}%</span>`
+  : `<span class="chg flat">${prefix}—</span>`;
+const staleDate = s => s ? parseInt(s.substring(5,7)) + '/' + parseInt(s.substring(8,10)) : '';
+
 function renderRows(sorted) {
   return sorted.map(r => {
     const fullName = (r.card_name || '—') + (r.rarity ? ' ' + r.rarity : '') + (r.collection_no ? ' [' + r.collection_no + ']' : '');
-    const meta = r.set_name || '';
-    const dodHtml = r.dod !== null
-      ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'+':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
-      : '<span class="chg flat">—</span>';
+    const staleNote = r.staleDays >= 3 ? `<span style="color:var(--accent)">最終取引 ${staleDate(r.last_tx)}</span>` : '';
+    const meta = [esc(r.set_name||''), staleNote].filter(Boolean).join(' ・ ');
     const trendLabel = TREND_LABEL_MAP[r.trend.cls] || '—';
     const scoreInfo  = r.trend.maxScore > 0 ? ` title="${r.trend.score}/${r.trend.maxScore}点 (${r.trend.dataPoints}件)"` : '';
     const trendHtml  = `<span class="signal-badge sig-${r.trend.cls}"${scoreInfo} style="font-size:10px;padding:2px 8px;cursor:default">${trendLabel}</span>`;
     const isActive   = r.apparel_id == activeApId;
     return `<tr class="${isActive?'active':''}" onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}">
-      <td><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${fullName}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</td>
+      <td><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${esc(fullName)}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</td>
       <td style="text-align:center">${rarityBadge(r.rarity)}</td>
       <td style="color:var(--text3);font-size:11px">${r.rank?'#'+r.rank:'—'}</td>
-      <td style="color:var(--blue)">${r.cnt}${r.has_more?'<sup style="color:var(--accent);font-size:9px;margin-left:1px">+</sup>':''}</td>
-      <td style="color:var(--red)">${fmt(r.mx)}</td>
-      <td style="color:var(--green)">${fmt(r.mn)}</td>
-      <td class="price-avg">${fmt(r.avg)}</td>
-      <td>${dodHtml}</td>
+      <td style="color:var(--blue)" title="全期間 ${r.cnt}件">${r.cnt7}${r.has_more?'<sup style="color:var(--accent);font-size:9px;margin-left:1px">+</sup>':''}</td>
+      <td style="color:var(--red)">${fmt(r.mx7)}</td>
+      <td style="color:var(--green)">${fmt(r.mn7)}</td>
+      <td class="price-avg">${fmt(r.med7)}</td>
+      <td>${chgHtml(r.dod)}</td>
+      <td>${chgHtml(r.wow)}</td>
       <td style="text-align:center">${trendHtml}</td>
       <td class="buy-price hide-mobile">${r.snkr?fmt(r.snkr):'<span style="color:var(--text3)">—</span>'}</td>
       <td class="buy-price hide-mobile">${r.mcr ?fmt(r.mcr) :'<span style="color:var(--text3)">—</span>'}</td>
@@ -894,33 +953,31 @@ function renderRows(sorted) {
 function renderCards(sorted) {
   return sorted.map(r => {
     const fullName = (r.card_name || '—') + (r.rarity ? ' ' + r.rarity : '') + (r.collection_no ? ' [' + r.collection_no + ']' : '');
-    const dodHtml = r.dod !== null
-      ? `<span class="chg ${r.dod>=0?'up':'down'}">${r.dod>=0?'+':'▼'}${Math.abs(r.dod).toFixed(1)}%</span>`
-      : '<span class="chg flat">—</span>';
     const trendLabel = TREND_LABEL_MAP[r.trend.cls] || '—';
     const isActive   = r.apparel_id == activeApId;
     const buyParts   = [];
     if (r.snkr) buyParts.push('SNKR ' + fmtShort(r.snkr));
     if (r.mcr)  buyParts.push('M ' + fmtShort(r.mcr));
     const rankStr = r.rank ? '#' + r.rank + ' &middot; ' : '';
+    const staleStr = r.staleDays >= 3 ? ` &middot; <span style="color:var(--accent)">最終 ${staleDate(r.last_tx)}</span>` : '';
     return `<tr class="card-row${isActive?' active':''}" onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}">
       <td>
         <div class="mc-card">
           <!-- 行1: カード名（レア+No.含む） | トレンド判定 -->
           <div class="mc-row1">
             <div class="mc-name-area">
-              <a class="mc-name" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${fullName}</a>
+              <a class="mc-name" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${esc(fullName)}</a>
             </div>
             <span class="signal-badge sig-${r.trend.cls} mc-trend">${trendLabel}</span>
           </div>
-          <!-- 行2: 平均価格(大) | ランク・件数・前日比 -->
+          <!-- 行2: 7日中央値(大) | ランク・7日件数・前日比・週比 -->
           <div class="mc-row2">
-            <span class="mc-avg">${fmt(r.avg)}</span>
-            <span class="mc-meta">${rankStr}${r.cnt}${r.has_more?'+':''}件 &middot; ${dodHtml}</span>
+            <span class="mc-avg">${fmt(r.med7)}</span>
+            <span class="mc-meta">${rankStr}${r.cnt7}${r.has_more?'+':''}件/7日 &middot; ${chgHtml(r.dod,'日')} ${chgHtml(r.wow,'週')}</span>
           </div>
-          <!-- 行3: 高値・安値 | 仕入上限 -->
+          <!-- 行3: 7日高値・安値・停滞表示 | 仕入上限 -->
           <div class="mc-row3">
-            <span class="mc-hilow">高 ${fmtShort(r.mx)}&ensp;低 ${fmtShort(r.mn)}</span>
+            <span class="mc-hilow">高 ${fmtShort(r.mx7)}&ensp;低 ${fmtShort(r.mn7)}${staleStr}</span>
             ${buyParts.length ? `<span class="mc-buy">${buyParts.join(' / ')}</span>` : ''}
           </div>
         </div>
@@ -933,7 +990,7 @@ function renderCards(sorted) {
 function setSort(col) {
   sortDir = (sortCol === col) ? -sortDir : (col === 'rank' ? 1 : -1);
   sortCol = col;
-  ['rank','cnt','mx','mn','avg','dod','trendScore'].forEach(c => {
+  ['rank','cnt7','mx7','mn7','med7','dod','wow','trendScore'].forEach(c => {
     const th = document.getElementById('th-'+c);
     const si = document.getElementById('si-'+c);
     if (th) th.classList.toggle('sort-active', c === col);
@@ -1003,13 +1060,14 @@ function buildCardSelect() {
   const cards = q(`SELECT apparel_id, card_name, set_name, collection_no, MIN(rank) as rank
     FROM ranking_transactions GROUP BY apparel_id ORDER BY MIN(rank)`);
   allOptions = cards.map(c => {
-    const meta = [c.set_name, c.collection_no].filter(Boolean).join(' · ');
-    return { value: String(c.apparel_id), text: `#${c.rank||'?'} ${c.card_name}${meta ? '  ['+meta+']' : ''}`, cardName: c.card_name||'' };
+    const name = cleanField(c.card_name) || '—';
+    const meta = [cleanField(c.set_name), cleanField(c.collection_no)].filter(Boolean).join(' · ');
+    return { value: String(c.apparel_id), text: `#${c.rank||'?'} ${name}${meta ? '  ['+meta+']' : ''}`, cardName: name };
   });
   populateSelect(allOptions);
 }
 function populateSelect(opts) {
-  document.getElementById('cardSelect').innerHTML = opts.map(o => `<option value="${escJs(o.value)}">${o.text}</option>`).join('');
+  document.getElementById('cardSelect').innerHTML = opts.map(o => `<option value="${escJs(o.value)}">${esc(o.text)}</option>`).join('');
 }
 function filterChartSelect(txt) {
   const lower = txt.toLowerCase().trim();
@@ -1051,12 +1109,12 @@ function toggleChartPanel() {
 function renderChart() {
   const apId = document.getElementById('cardSelect').value;
   if (!apId) return;
-  // グラフは最新取引から最大7日（168時間）分を表示
+  // グラフは最新取引から chartRangeHours 分を表示（null = 全期間）
   const maxDateRes = q('SELECT MAX(transaction_date) as d FROM ranking_transactions WHERE apparel_id=?', [apId]);
   const maxDate = maxDateRes.length ? maxDateRes[0].d : null;
-  const rows = maxDate
-    ? q('SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? AND transaction_date >= datetime(?,\'-168 hours\') ORDER BY transaction_date', [apId, maxDate])
-    : [];
+  const rows = !maxDate ? [] : (chartRangeHours
+    ? q(`SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? AND transaction_date >= datetime(?,'-${chartRangeHours} hours') ORDER BY transaction_date`, [apId, maxDate])
+    : q('SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date', [apId]));
   const stats  = q('SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM ranking_transactions WHERE apparel_id=?', [apId])[0];
   const ch24   = getTimeWindowChange(apId, 24);
   const ch48   = getTimeWindowChange(apId, 48);
@@ -1067,7 +1125,9 @@ function renderChart() {
   const ma5    = calcMA(prices, 5);
   const ma10   = calcMA(prices, 10);
   const ma20   = calcMA(prices, 20);
-  const trend  = getTrendSignal(prices, ma5, ma10, ma20);
+  // トレンド判定はテーブルと同じ全期間の取引で計算（表示期間に依存させない）
+  const allPrices = q('SELECT price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date', [apId]).map(r => r.price);
+  const trend  = getTrendSignal(allPrices, calcMA(allPrices,5), calcMA(allPrices,10), calcMA(allPrices,20));
   updateStats(stats, ch24, ch48, trend);
   if (chartInst) chartInst.destroy();
   if (!prices.length) return;
@@ -1100,24 +1160,27 @@ function renderChart() {
       },
       scales: {
         x:{ ticks:{ color:'#666', font:{size:11}, maxTicksLimit:10, maxRotation:30 }, grid:{ color:'rgba(255,255,255,0.05)' } },
-        y:{ grace:'15%', ticks:{ color:'#666', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(0)+'万' : '¥'+v.toLocaleString() }, grid:{ color:'rgba(255,255,255,0.05)' } }
+        y:{ grace:'15%', ticks:{ color:'#666', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(1).replace(/\.0$/,'')+'万' : '¥'+v.toLocaleString() }, grid:{ color:'rgba(255,255,255,0.05)' } }
       }
     }
   });
+  // 凡例のMA値は表示中のチャート（表示期間内）の最新値
+  const lastVal = a => { for (let i = a.length-1; i >= 0; i--) if (a[i] != null) return a[i]; return null; };
+  const [lv5, lv10, lv20] = [lastVal(ma5), lastVal(ma10), lastVal(ma20)];
   document.getElementById('chartLegend').innerHTML = `
     <div class="legend-item"><div style="width:20px;height:2px;background:#e8a020;border-radius:2px"></div>取引価格</div>
-    <div class="legend-item" style="color:#4caf7d"><div style="width:20px;border-top:2px dashed #4caf7d"></div>MA5${trend.lastMA5 ? '  '+fmt(trend.lastMA5) : '  —'}</div>
-    <div class="legend-item" style="color:#5b9cf6"><div style="width:20px;border-top:2px dashed #5b9cf6"></div>MA10${trend.lastMA10 ? '  '+fmt(trend.lastMA10) : '  —'}</div>
-    <div class="legend-item" style="color:#e05555"><div style="width:20px;border-top:2px dashed #e05555"></div>MA20${trend.lastMA20 ? '  '+fmt(trend.lastMA20) : '  —'}</div>`;
+    <div class="legend-item" style="color:#4caf7d"><div style="width:20px;border-top:2px dashed #4caf7d"></div>MA5${lv5 ? '  '+fmt(lv5) : '  —'}</div>
+    <div class="legend-item" style="color:#5b9cf6"><div style="width:20px;border-top:2px dashed #5b9cf6"></div>MA10${lv10 ? '  '+fmt(lv10) : '  —'}</div>
+    <div class="legend-item" style="color:#e05555"><div style="width:20px;border-top:2px dashed #e05555"></div>MA20${lv20 ? '  '+fmt(lv20) : '  —'}</div>`;
 }
 
 // ===== STATS =====
 function updateStats(stats, ch24, ch48, trend) {
   document.getElementById('statsRow1').innerHTML = stats ? `
-    <div class="stat-box"><div class="stat-box-label">高値</div><div class="stat-box-val" style="color:var(--red)">${fmt(stats.mx)}</div></div>
-    <div class="stat-box"><div class="stat-box-label">安値</div><div class="stat-box-val" style="color:var(--green)">${fmt(stats.mn)}</div></div>
-    <div class="stat-box"><div class="stat-box-label">平均</div><div class="stat-box-val">${fmt(stats.avg)}</div></div>
-    <div class="stat-box"><div class="stat-box-label">件数</div><div class="stat-box-val" style="color:var(--text2)">${stats.cnt||0}件</div></div>` : '';
+    <div class="stat-box"><div class="stat-box-label">高値(全期間)</div><div class="stat-box-val" style="color:var(--red)">${fmt(stats.mx)}</div></div>
+    <div class="stat-box"><div class="stat-box-label">安値(全期間)</div><div class="stat-box-val" style="color:var(--green)">${fmt(stats.mn)}</div></div>
+    <div class="stat-box"><div class="stat-box-label">平均(全期間)</div><div class="stat-box-val">${fmt(stats.avg)}</div></div>
+    <div class="stat-box"><div class="stat-box-label">件数(全期間)</div><div class="stat-box-val" style="color:var(--text2)">${stats.cnt||0}件</div></div>` : '';
   document.getElementById('statsRow2').innerHTML = fmtChangeBox(ch24,'24h変化') + fmtChangeBox(ch48,'48h変化');
   const needMore = trend.dataPoints < 20 ? `<span style="font-size:10px;color:var(--text3)">(${trend.dataPoints}件/20件)</span>` : '';
   const scoreStr = trend.maxScore > 0 ? `${trend.score}/${trend.maxScore}` : '';
@@ -1145,6 +1208,11 @@ function fmtChangeBox(ch, label) {
 // ===== EVENTS =====
 document.getElementById('tableSearch').addEventListener('input', function() { filterText = this.value; renderTableBody(); });
 document.getElementById('chartSearchInput').addEventListener('input', function() { filterChartSelect(this.value); });
+document.querySelectorAll('.range-chip').forEach(b => b.addEventListener('click', () => {
+  chartRangeHours = b.dataset.h === 'all' ? null : parseInt(b.dataset.h);
+  document.querySelectorAll('.range-chip').forEach(c => c.classList.toggle('active', c === b));
+  renderChart();
+}));
 window.addEventListener('scroll', () => { document.getElementById('scrollTopBtn').classList.toggle('show', window.scrollY > 300); });
 
 // リサイズ時にテーブル/カードを切替
