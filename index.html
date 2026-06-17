@@ -303,7 +303,7 @@
               <th class="sortable" onclick="setSort('med7')"       id="th-med7" title="直近7日間の取引価格の中央値（外れ値に強い実勢相場）">7日中央値<span class="sort-icon" id="si-med7"></span></th>
               <th class="sortable sort-active" onclick="setSort('dod')"        id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
               <th class="sortable" onclick="setSort('wow')"        id="th-wow" title="直近7日中央値 vs その前7日中央値の変化率">週比<span class="sort-icon" id="si-wow"></span></th>
-              <th class="sortable" onclick="setSort('trendScore')" id="th-trendScore" title="MA5/10/20によるトレンド判定">判定<span class="sort-icon" id="si-trendScore"></span></th>
+              <th class="sortable" onclick="setSort('trendScore')" id="th-trendScore" title="日次MA5/10/20（5日/10日/20日線）によるトレンド判定">判定<span class="sort-icon" id="si-trendScore"></span></th>
               <th class="hide-mobile" title="スニダン(手数料9.3%+送料¥240)で利益率10%が出る仕入上限（直近7日中央値ベース）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
               <th class="hide-mobile" title="メルカリ(手数料10%+送料¥160)で利益率10%が出る仕入上限（直近7日中央値ベース）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
             </tr>
@@ -800,9 +800,13 @@ function buildDodMap() {
 }
 
 function buildTrendMap() {
-  const allTx = q(`SELECT apparel_id, price FROM ranking_transactions ORDER BY apparel_id, transaction_date ASC`);
+  // MAは「取引1件ごと」ではなく「1日1点（日次平均）」で計算する。
+  // → 取引量の多寡に左右されず、カード間で同じ時間軸(週/月)の比較ができる
+  const daily = q(`SELECT apparel_id, DATE(transaction_date) d, CAST(AVG(price) AS INT) p
+    FROM ranking_transactions GROUP BY apparel_id, DATE(transaction_date)
+    ORDER BY apparel_id, d ASC`);
   const pm = {};
-  allTx.forEach(r => { if (!pm[r.apparel_id]) pm[r.apparel_id]=[]; pm[r.apparel_id].push(r.price); });
+  daily.forEach(r => { if (!pm[r.apparel_id]) pm[r.apparel_id]=[]; pm[r.apparel_id].push(r.p); });
   const result = {};
   Object.entries(pm).forEach(([apId, prices]) => {
     result[apId] = getTrendSignal(prices, calcMA(prices,5), calcMA(prices,10), calcMA(prices,20));
@@ -1122,12 +1126,20 @@ function renderChart() {
   document.getElementById('chartCardName').textContent = opt ? opt.cardName : '';
   const labels = rows.map(r => (r.transaction_date||'').replace('T',' ').substring(5,16));
   const prices = rows.map(r => r.price);
-  const ma5    = calcMA(prices, 5);
-  const ma10   = calcMA(prices, 10);
-  const ma20   = calcMA(prices, 20);
-  // トレンド判定はテーブルと同じ全期間の取引で計算（表示期間に依存させない）
-  const allPrices = q('SELECT price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date', [apId]).map(r => r.price);
-  const trend  = getTrendSignal(allPrices, calcMA(allPrices,5), calcMA(allPrices,10), calcMA(allPrices,20));
+  // MAは日次（1日1点の平均）で計算。全期間の日次系列で算出し、表示中の各取引にその日のMA値を割り当てる
+  // → 7日表示でも過去データからMA20まで描ける／取引量に依存しない一貫したトレンド線になる
+  const daily   = q(`SELECT DATE(transaction_date) d, CAST(AVG(price) AS INT) p
+    FROM ranking_transactions WHERE apparel_id=? GROUP BY DATE(transaction_date) ORDER BY d ASC`, [apId]);
+  const dPrices = daily.map(r => r.p);
+  const dMA = { 5:calcMA(dPrices,5), 10:calcMA(dPrices,10), 20:calcMA(dPrices,20) };
+  const maByDay = {};
+  daily.forEach((r,i) => { maByDay[r.d] = { ma5:dMA[5][i], ma10:dMA[10][i], ma20:dMA[20][i] }; });
+  const dayOf = ts => (ts||'').substring(0,10);
+  const ma5  = rows.map(r => (maByDay[dayOf(r.transaction_date)]||{}).ma5  ?? null);
+  const ma10 = rows.map(r => (maByDay[dayOf(r.transaction_date)]||{}).ma10 ?? null);
+  const ma20 = rows.map(r => (maByDay[dayOf(r.transaction_date)]||{}).ma20 ?? null);
+  // トレンド判定は全期間の日次系列で計算（表示期間に依存させない）
+  const trend  = getTrendSignal(dPrices, dMA[5], dMA[10], dMA[20]);
   updateStats(stats, ch24, ch48, trend);
   if (chartInst) chartInst.destroy();
   if (!prices.length) return;
@@ -1145,9 +1157,9 @@ function renderChart() {
             font:{ size: prices.length > 60 ? 8 : 9, weight:'bold' },
             formatter: v => (v != null) ? '¥'+parseInt(v).toLocaleString() : null,
             anchor:'end', align:'top', offset:3, clamp:true } },
-        { type:'line', label:'MA5',  data:ma5,  borderColor:'#4caf7d', borderWidth:1.5, borderDash:[5,3], pointRadius:0, tension:0.3, fill:false, spanGaps:false, order:3, datalabels:{display:false} },
-        { type:'line', label:'MA10', data:ma10, borderColor:'#5b9cf6', borderWidth:1.5, borderDash:[5,3], pointRadius:0, tension:0.3, fill:false, spanGaps:false, order:2, datalabels:{display:false} },
-        { type:'line', label:'MA20', data:ma20, borderColor:'#e05555', borderWidth:1.5, borderDash:[5,3], pointRadius:0, tension:0.3, fill:false, spanGaps:false, order:1, datalabels:{display:false} }
+        { type:'line', label:'MA5(5日)',  data:ma5,  borderColor:'#4caf7d', borderWidth:1.5, borderDash:[5,3], pointRadius:0, stepped:true, fill:false, spanGaps:false, order:3, datalabels:{display:false} },
+        { type:'line', label:'MA10(10日)', data:ma10, borderColor:'#5b9cf6', borderWidth:1.5, borderDash:[5,3], pointRadius:0, stepped:true, fill:false, spanGaps:false, order:2, datalabels:{display:false} },
+        { type:'line', label:'MA20(20日)', data:ma20, borderColor:'#e05555', borderWidth:1.5, borderDash:[5,3], pointRadius:0, stepped:true, fill:false, spanGaps:false, order:1, datalabels:{display:false} }
       ]
     },
     options: {
@@ -1169,9 +1181,9 @@ function renderChart() {
   const [lv5, lv10, lv20] = [lastVal(ma5), lastVal(ma10), lastVal(ma20)];
   document.getElementById('chartLegend').innerHTML = `
     <div class="legend-item"><div style="width:20px;height:2px;background:#e8a020;border-radius:2px"></div>取引価格</div>
-    <div class="legend-item" style="color:#4caf7d"><div style="width:20px;border-top:2px dashed #4caf7d"></div>MA5${lv5 ? '  '+fmt(lv5) : '  —'}</div>
-    <div class="legend-item" style="color:#5b9cf6"><div style="width:20px;border-top:2px dashed #5b9cf6"></div>MA10${lv10 ? '  '+fmt(lv10) : '  —'}</div>
-    <div class="legend-item" style="color:#e05555"><div style="width:20px;border-top:2px dashed #e05555"></div>MA20${lv20 ? '  '+fmt(lv20) : '  —'}</div>`;
+    <div class="legend-item" style="color:#4caf7d"><div style="width:20px;border-top:2px dashed #4caf7d"></div>MA5(5日)${lv5 ? '  '+fmt(lv5) : '  —'}</div>
+    <div class="legend-item" style="color:#5b9cf6"><div style="width:20px;border-top:2px dashed #5b9cf6"></div>MA10(10日)${lv10 ? '  '+fmt(lv10) : '  —'}</div>
+    <div class="legend-item" style="color:#e05555"><div style="width:20px;border-top:2px dashed #e05555"></div>MA20(20日)${lv20 ? '  '+fmt(lv20) : '  —'}</div>`;
 }
 
 // ===== STATS =====
@@ -1182,7 +1194,7 @@ function updateStats(stats, ch24, ch48, trend) {
     <div class="stat-box"><div class="stat-box-label">平均(全期間)</div><div class="stat-box-val">${fmt(stats.avg)}</div></div>
     <div class="stat-box"><div class="stat-box-label">件数(全期間)</div><div class="stat-box-val" style="color:var(--text2)">${stats.cnt||0}件</div></div>` : '';
   document.getElementById('statsRow2').innerHTML = fmtChangeBox(ch24,'24h変化') + fmtChangeBox(ch48,'48h変化');
-  const needMore = trend.dataPoints < 20 ? `<span style="font-size:10px;color:var(--text3)">(${trend.dataPoints}件/20件)</span>` : '';
+  const needMore = trend.dataPoints < 20 ? `<span style="font-size:10px;color:var(--text3)">(${trend.dataPoints}日/20日)</span>` : '';
   const scoreStr = trend.maxScore > 0 ? `${trend.score}/${trend.maxScore}` : '';
   document.getElementById('signalRow').innerHTML = `
     <span class="signal-label-text">トレンド判定:</span>
