@@ -97,7 +97,7 @@
 
   /* ===== TABLE (desktop) ===== */
   .tbl-outer{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:62vh;border-radius:var(--radius);}
-  table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;min-width:960px;}
   thead{position:sticky;top:0;z-index:10;}
   th{padding:8px 10px;border-bottom:2px solid var(--border2);font-size:10px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;text-align:right;user-select:none;background:var(--bg2);}
   th:first-child{text-align:left;}
@@ -269,6 +269,7 @@
         <div class="set-filter-wrap">
           <select id="setFilter" onchange="onSetFilterChange()"></select>
         </div>
+        <button class="chip" id="profitChip" onclick="toggleProfitFilter()" title="想定利益率5%以上・7日10件以上・判定が中立以上・直近3日以内に取引あり、の仕入候補だけを利益率順に表示">💰 仕入候補</button>
         <div class="filter-chips" id="rarityChips"></div>
         <span class="result-count" id="resultCount"></span>
       </div>
@@ -277,6 +278,7 @@
       <div class="mobile-sort-bar" id="mobileSortBar">
         <label>並替:</label>
         <select id="mobileSortSelect" onchange="onMobileSortChange()">
+          <option value="roi7">想定利益率</option>
           <option value="dod">前日比</option>
           <option value="wow">週比</option>
           <option value="trendScore">判定</option>
@@ -304,6 +306,7 @@
               <th class="sortable sort-active" onclick="setSort('dod')"        id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
               <th class="sortable" onclick="setSort('wow')"        id="th-wow" title="直近7日中央値 vs その前7日中央値の変化率">週比<span class="sort-icon" id="si-wow"></span></th>
               <th class="sortable" onclick="setSort('trendScore')" id="th-trendScore" title="日次MA5/10/20（5日/10日/20日線）によるトレンド判定">判定<span class="sort-icon" id="si-trendScore"></span></th>
+              <th class="sortable" onclick="setSort('roi7')"       id="th-roi7" title="直近7日の実際の安値で仕入れ、スニダン中央値で売った場合の利益率（手数料9.3%+送料¥240控除後）。5%以上=緑">想定利益<span class="sort-icon" id="si-roi7"></span></th>
               <th class="hide-mobile" title="スニダン(手数料9.3%+送料¥240)で利益率10%が出る仕入上限（直近7日中央値ベース）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
               <th class="hide-mobile" title="メルカリ(手数料10%+送料¥160)で利益率10%が出る仕入上限（直近7日中央値ベース）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
             </tr>
@@ -631,7 +634,7 @@ const POKEMON_NAME_MAP = {
 let db = null, chartInst = null, activeApId = null;
 let tableData = [], allOptions = [];
 let sortCol = 'dod', sortDir = -1;
-let filterRarity = 'all', filterText = '', filterSet = 'all';
+let filterRarity = 'all', filterText = '', filterSet = 'all', filterProfit = false;
 let showPriceLabels = true;
 let chartRangeHours = 168; // チャート表示期間（null = 全期間）
 let chartPanelOpen = true; // will be set by buildDashboard
@@ -869,12 +872,15 @@ function buildTable() {
     // 仕入上限は直近7日中央値ベース（全期間平均だと上昇/下落局面で古い相場を引きずるため）
     const snkr = med7 > 0 ? Math.floor((med7*0.907-240)/1.10) : null;
     const mcr  = med7 > 0 ? Math.floor((med7*0.900-160)/1.10) : null;
+    // 想定利益率: 直近7日の実際の安値で仕入れ、スニダン中央値で売った場合のROI（手数料9.3%+送料¥240控除後）
+    // 実際に付いた安値ベースなので「その価格で買えた実績がある」＝現実的な利益機会の指標
+    const roi7 = (mn7 > 0 && med7 > 0) ? ((med7*0.907 - 240) - mn7) / mn7 * 100 : null;
     const trend = trendMap[r.apparel_id] || { cls:'no-data', score:0, maxScore:0, dataPoints:0 };
     // 最新収集日の件数が24件以上のときのみ + 表示
     const has_more = (latestCntMap[r.apparel_id] || 0) >= 24 ? 1 : 0;
     // 最終取引からの経過日数（3日以上動きがなければ停滞表示）
     const staleDays = r.last_tx ? Math.floor((maxDms - new Date(r.last_tx.replace(' ','T')).getTime()) / 86400000) : null;
-    return { ...r, has_more, cnt7, mx7, mn7, med7, wow, dod:dod_pct, staleDays,
+    return { ...r, has_more, cnt7, mx7, mn7, med7, wow, dod:dod_pct, staleDays, roi7,
              snkr:snkr>0?snkr:null, mcr:mcr>0?mcr:null,
              trend, trendScore: TREND_SCORE_MAP[trend.cls] ?? 0 };
   });
@@ -890,6 +896,13 @@ function getFilteredSorted() {
     }
     if (filterRarity !== 'all' && r.rarity !== filterRarity) return false;
     if (filterSet !== 'all' && !getPokemonNames(r).includes(filterSet)) return false;
+    if (filterProfit) {
+      // 仕入候補: 利益が出る実績があり・流動性があり・下落トレンドでなく・直近も取引がある
+      if (r.roi7 === null || r.roi7 < 5) return false;       // 想定利益率5%以上（安値仕入→中央値売りの保守指標）
+      if (r.cnt7 < 10) return false;                          // 7日で10件以上（売り抜けやすさ）
+      if (r.trendScore < 3) return false;                     // 判定が中立以上（売り/強い売りは除外）
+      if (r.staleDays !== null && r.staleDays >= 3) return false; // 3日以上取引なしは除外
+    }
     return true;
   });
   // sortDir: -1 = 降順（大きい順）, 1 = 昇順（小さい順）。nullは常に末尾
@@ -925,6 +938,13 @@ function renderTableBody() {
 const chgHtml = (v, prefix='') => v !== null
   ? `<span class="chg ${v>=0?'up':'down'}">${prefix}${v>=0?'+':'▼'}${Math.abs(v).toFixed(1)}%</span>`
   : `<span class="chg flat">${prefix}—</span>`;
+// 想定利益率: 5%以上=緑(狙い目) / 0〜5%=橙(薄利) / マイナス=赤(利益なし)
+// ※安値仕入→中央値売り(手数料後)の保守的な指標のため、5%でも十分に優良
+const roiHtml = v => {
+  if (v === null) return '<span class="chg flat">—</span>';
+  const clr = v >= 5 ? 'var(--green)' : v >= 0 ? 'var(--accent)' : 'var(--red)';
+  return `<span class="chg" style="color:${clr}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+};
 const staleDate = s => s ? parseInt(s.substring(5,7)) + '/' + parseInt(s.substring(8,10)) : '';
 
 function renderRows(sorted) {
@@ -947,6 +967,7 @@ function renderRows(sorted) {
       <td>${chgHtml(r.dod)}</td>
       <td>${chgHtml(r.wow)}</td>
       <td style="text-align:center">${trendHtml}</td>
+      <td>${roiHtml(r.roi7)}</td>
       <td class="buy-price hide-mobile">${r.snkr?fmt(r.snkr):'<span style="color:var(--text3)">—</span>'}</td>
       <td class="buy-price hide-mobile">${r.mcr ?fmt(r.mcr) :'<span style="color:var(--text3)">—</span>'}</td>
     </tr>`;
@@ -979,9 +1000,9 @@ function renderCards(sorted) {
             <span class="mc-avg">${fmt(r.med7)}</span>
             <span class="mc-meta">${rankStr}${r.cnt7}${r.has_more?'+':''}件/7日 &middot; ${chgHtml(r.dod,'日')} ${chgHtml(r.wow,'週')}</span>
           </div>
-          <!-- 行3: 7日高値・安値・停滞表示 | 仕入上限 -->
+          <!-- 行3: 想定利益・7日高値・安値・停滞表示 | 仕入上限 -->
           <div class="mc-row3">
-            <span class="mc-hilow">高 ${fmtShort(r.mx7)}&ensp;低 ${fmtShort(r.mn7)}${staleStr}</span>
+            <span class="mc-hilow">利 ${roiHtml(r.roi7)}&ensp;高 ${fmtShort(r.mx7)}&ensp;低 ${fmtShort(r.mn7)}${staleStr}</span>
             ${buyParts.length ? `<span class="mc-buy">${buyParts.join(' / ')}</span>` : ''}
           </div>
         </div>
@@ -991,20 +1012,24 @@ function renderCards(sorted) {
 }
 
 // ===== SORT =====
-function setSort(col) {
-  sortDir = (sortCol === col) ? -sortDir : (col === 'rank' ? 1 : -1);
-  sortCol = col;
-  ['rank','cnt7','mx7','mn7','med7','dod','wow','trendScore'].forEach(c => {
+function updateSortUI() {
+  ['rank','cnt7','mx7','mn7','med7','dod','wow','trendScore','roi7'].forEach(c => {
     const th = document.getElementById('th-'+c);
     const si = document.getElementById('si-'+c);
-    if (th) th.classList.toggle('sort-active', c === col);
-    if (si) si.textContent = c === col ? (sortDir === -1 ? '↓' : '↑') : '';
+    if (th) th.classList.toggle('sort-active', c === sortCol);
+    if (si) si.textContent = c === sortCol ? (sortDir === -1 ? '↓' : '↑') : '';
   });
   // モバイルソートセレクトも同期
   const mss = document.getElementById('mobileSortSelect');
-  if (mss) mss.value = col;
+  if (mss) mss.value = sortCol;
   const msb = document.getElementById('mobileSortDirBtn');
   if (msb) msb.textContent = sortDir === -1 ? '↓ 降順' : '↑ 昇順';
+}
+
+function setSort(col) {
+  sortDir = (sortCol === col) ? -sortDir : (col === 'rank' ? 1 : -1);
+  sortCol = col;
+  updateSortUI();
   renderTableBody();
 }
 
@@ -1022,6 +1047,14 @@ function toggleMobileSortDir() {
   renderTableBody();
 }
 
+// ===== 仕入候補フィルター =====
+function toggleProfitFilter() {
+  filterProfit = !filterProfit;
+  document.getElementById('profitChip').classList.toggle('active', filterProfit);
+  if (filterProfit) { sortCol = 'roi7'; sortDir = -1; updateSortUI(); } // ONにしたら利益率順に並べ替え
+  renderTableBody();
+}
+
 // ===== RARITY CHIPS =====
 function buildRarityChips() {
   const rarities = [...new Set(tableData.map(r => r.rarity).filter(Boolean))].sort();
@@ -1032,7 +1065,8 @@ function buildRarityChips() {
     btn.className = 'chip' + (r === 'all' ? ' active' : '');
     btn.textContent = r === 'all' ? 'ALL' : r;
     btn.dataset.rarity = r;
-    btn.onclick = () => { filterRarity = r; document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.rarity === r)); renderTableBody(); };
+    // '#rarityChips .chip' に限定（'.chip'全体だと期間チップ・仕入候補チップのactiveまで消してしまう）
+    btn.onclick = () => { filterRarity = r; document.querySelectorAll('#rarityChips .chip').forEach(c => c.classList.toggle('active', c.dataset.rarity === r)); renderTableBody(); };
     container.appendChild(btn);
   });
 }
@@ -1046,12 +1080,23 @@ function getPokemonNames(r) {
   return m ? [m[1]] : [r.card_name];
 }
 function buildSetFilter() {
-  const nameSet = new Set();
-  tableData.forEach(r => getPokemonNames(r).forEach(n => nameSet.add(n)));
-  const names = [...nameSet].sort();
+  // 表示順: 最新取引日の取引数ランキング（多い順）→ 同数はあいうえお順
+  const latestDay = q('SELECT DATE(MAX(transaction_date)) as d FROM ranking_transactions')[0]?.d;
+  const dayCntByAp = {};
+  if (latestDay) {
+    q('SELECT apparel_id, COUNT(*) as c FROM ranking_transactions WHERE DATE(transaction_date)=? GROUP BY apparel_id', [latestDay])
+      .forEach(r => { dayCntByAp[r.apparel_id] = r.c; });
+  }
+  const cntByName = {};
+  tableData.forEach(r => {
+    const c = dayCntByAp[r.apparel_id] || 0;
+    getPokemonNames(r).forEach(n => { cntByName[n] = (cntByName[n] || 0) + c; });
+  });
+  const names = Object.keys(cntByName).sort((a,b) =>
+    (cntByName[b] - cntByName[a]) || a.localeCompare(b, 'ja'));
   const sel = document.getElementById('setFilter');
   sel.innerHTML = `<option value="all">ポケモン: すべて</option>` +
-    names.map(n => `<option value="${escJs(n)}">${n}</option>`).join('');
+    names.map(n => `<option value="${escJs(n)}">${n}${cntByName[n] ? ' ('+cntByName[n]+')' : ''}</option>`).join('');
   sel.value = filterSet;
 }
 function onSetFilterChange() {
