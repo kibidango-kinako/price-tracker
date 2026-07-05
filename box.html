@@ -216,10 +216,10 @@ function buildIndexes() {
   dailyByProduct = {}; askByProduct = {}; prevAvgByProduct = {};
   const meta = {};
 
-  // 取引 → 日別平均単価
+  // 取引 → 収集日別の平均単価（各収集日は直前24時間の取引を表す）
   const acc = {};
   for (const tx of DATA.transactions) {
-    const d = (tx.transaction_date || tx.collected_date).slice(0, 10);
+    const d = tx.collected_date;
     const k = tx.apparel_id;
     (acc[k] = acc[k] || {});
     (acc[k][d] = acc[k][d] || []).push(tx.unit_price);
