@@ -119,7 +119,7 @@
 
     <!-- 価格推移チャート -->
     <div class="panel">
-      <div class="section-title">価格推移（シュリンクあり・BOXは1BOX取引のみ / パックは1個あたり単価）</div>
+      <div class="section-title">価格推移（取引ごと・シュリンクあり・BOXは1BOX取引のみ / パックは1個あたり単価）</div>
       <div class="chart-card-name" id="chartName">—</div>
       <div class="search-select-row">
         <div class="search-icon-wrap" style="flex:1">
@@ -136,7 +136,7 @@
       <div class="stats-row" id="statsRow"></div>
       <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
       <div class="chart-legend">
-        <div class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>平均単価（取引）</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>取引単価</div>
         <div class="legend-item"><span class="legend-swatch" style="background:var(--blue)"></span>出品最安値</div>
       </div>
     </div>
@@ -179,7 +179,8 @@
 <script>
 const DB_URL = './box_data.json';
 let DATA = null;
-let dailyByProduct = {};   // apparel_id -> [{date, avg, count}]
+let dailyByProduct = {};   // apparel_id -> [{date, avg, count}]（統計・前日比用）
+let txsByProduct = {};     // apparel_id -> [{t, price, count}] 取引ごと（同一時刻は平均）
 let askByProduct = {};     // apparel_id -> {date: lowest_price}
 let prevAvgByProduct = {}; // apparel_id -> 前日平均
 let productList = [];      // チャート/テーブル共通の商品メタ
@@ -213,22 +214,31 @@ async function loadData(bust) {
 }
 
 function buildIndexes() {
-  dailyByProduct = {}; askByProduct = {}; prevAvgByProduct = {};
+  dailyByProduct = {}; txsByProduct = {}; askByProduct = {}; prevAvgByProduct = {};
   const meta = {};
 
-  // 取引 → 収集日別の平均単価（各収集日は直前24時間の取引を表す）
-  const acc = {};
+  // 取引 → 取引日時別（グラフ用）と取引日別（統計用）に集計
+  const acc = {};      // apparel_id -> {日付: [単価]}
+  const accTx = {};    // apparel_id -> {取引日時: [単価]}
   for (const tx of DATA.transactions) {
-    const d = tx.collected_date;
     const k = tx.apparel_id;
+    const t = tx.transaction_date || tx.collected_date;
+    const d = t.slice(0, 10);
     (acc[k] = acc[k] || {});
     (acc[k][d] = acc[k][d] || []).push(tx.unit_price);
+    (accTx[k] = accTx[k] || {});
+    (accTx[k][t] = accTx[k][t] || []).push(tx.unit_price);
     if (!meta[k]) meta[k] = {apparel_id: k, product_name: tx.product_name, product_type: tx.product_type, url: tx.url};
   }
   for (const k in acc) {
     dailyByProduct[k] = Object.entries(acc[k])
       .map(([date, arr]) => ({date, avg: arr.reduce((a, b) => a + b, 0) / arr.length, count: arr.length}))
       .sort((a, b) => a.date.localeCompare(b.date));
+  }
+  for (const k in accTx) {
+    txsByProduct[k] = Object.entries(accTx[k])
+      .map(([t, arr]) => ({t, price: Math.round(arr.reduce((a, b) => a + b, 0) / arr.length), count: arr.length}))
+      .sort((a, b) => a.t.localeCompare(b.t));
   }
 
   // 出品最安値スナップショット
@@ -278,17 +288,26 @@ function renderChart() {
   document.getElementById('chartName').textContent = p ? p.product_name : '—';
   if (!p) return;
 
-  let days = dailyByProduct[selectedId] || [];
+  // 取引ごとの点列（同一時刻は平均済み）
+  let txs = txsByProduct[selectedId] || [];
   const asks = askByProduct[selectedId] || {};
-  const askDates = Object.keys(asks).sort();
-  let labels = [...new Set([...days.map(d => d.date), ...askDates])].sort();
-  if (rangeDays !== 'all') labels = labels.slice(-rangeDays);
-  const avgMap = Object.fromEntries(days.map(d => [d.date, Math.round(d.avg)]));
-  const cntMap = Object.fromEntries(days.map(d => [d.date, d.count]));
+  if (rangeDays !== 'all') {
+    const cutoff = new Date(DATA.today + 'T00:00:00');
+    cutoff.setDate(cutoff.getDate() - (rangeDays - 1));
+    const cutoffStr = cutoff.getFullYear() + '-' +
+      String(cutoff.getMonth() + 1).padStart(2, '0') + '-' +
+      String(cutoff.getDate()).padStart(2, '0');
+    txs = txs.filter(x => x.t.slice(0, 10) >= cutoffStr);
+  }
+  const labels = txs.map(x => x.t);
+  const cntMap = Object.fromEntries(txs.map(x => [x.t, x.count]));
 
-  // 統計
+  // 統計（取引日ベースの日次集計から）
+  const days = dailyByProduct[selectedId] || [];
   const today = DATA.today;
-  const tAvg = avgMap[today], tCnt = cntMap[today] || 0;
+  const todayDay = days.find(d => d.date === today);
+  const tAvg = todayDay ? Math.round(todayDay.avg) : null;
+  const tCnt = todayDay ? todayDay.count : 0;
   const prev = prevAvgByProduct[selectedId];
   let chgHtml = '<span class="chg flat">—</span>';
   if (tAvg != null && prev != null) {
@@ -305,10 +324,11 @@ function renderChart() {
       '<div class="stat-box-sub"><a class="card-link" style="font-size:10px;color:var(--blue)" href="' + p.url + '" target="_blank" rel="noopener">スニダンで見る ↗</a></div></div>';
 
   const ds = [
-    {label: '平均単価', data: labels.map(d => avgMap[d] ?? null), borderColor: '#e8a020',
-     backgroundColor: 'rgba(232,160,32,.1)', spanGaps: true, tension: .25, pointRadius: 3, fill: true},
-    {label: '出品最安値', data: labels.map(d => asks[d] ?? null), borderColor: '#5b9cf6',
-     backgroundColor: 'transparent', spanGaps: true, tension: .25, pointRadius: 2, borderDash: [5, 4]},
+    {label: '取引単価', data: txs.map(x => x.price), borderColor: '#e8a020',
+     backgroundColor: 'rgba(232,160,32,.1)', spanGaps: true, tension: .25,
+     pointRadius: txs.length > 120 ? 0 : 2.5, fill: true},
+    {label: '出品最安値', data: labels.map(t => asks[t.slice(0, 10)] ?? null), borderColor: '#5b9cf6',
+     backgroundColor: 'transparent', spanGaps: true, tension: .25, pointRadius: 0, borderDash: [5, 4]},
   ];
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('priceChart'), {
@@ -320,10 +340,12 @@ function renderChart() {
       plugins: {
         legend: {display: false},
         tooltip: {callbacks: {label: c => c.dataset.label + ': ' + yen(c.parsed.y) +
-          (c.datasetIndex === 0 && cntMap[c.label] ? '（' + cntMap[c.label] + '件）' : '')}},
+          (c.datasetIndex === 0 && cntMap[c.label] > 1 ? '（同時刻' + cntMap[c.label] + '件の平均）' : '')}},
       },
       scales: {
-        x: {ticks: {color: '#888', font: {size: 10}}, grid: {color: 'rgba(255,255,255,.05)'}},
+        x: {ticks: {color: '#888', font: {size: 10}, maxTicksLimit: 8, maxRotation: 0,
+              callback: function(v) { const t = this.getLabelForValue(v); return t.slice(5); }},
+            grid: {color: 'rgba(255,255,255,.05)'}},
         y: {ticks: {color: '#888', font: {size: 10}, callback: v => '¥' + v.toLocaleString()},
             grid: {color: 'rgba(255,255,255,.05)'}},
       },
