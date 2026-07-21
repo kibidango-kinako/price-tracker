@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PSA10 相場ダッシュボード</title>
+<title>ワンピースカード PSA10 相場ダッシュボード</title>
 <style>
   :root {
     --bg:#0f0f0f; --bg2:#1a1a1a; --bg3:#242424;
     --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
     --text:#f0f0f0; --text2:#888; --text3:#444;
-    --accent:#e8a020; --accent2:#c47f10;
-    --green:#4caf7d; --red:#e05555; --blue:#5b9cf6;
+    /* ワンピース版は海のブルーを基調（ポケモン版のゴールドと区別） */
+    --accent:#2e9be6; --accent2:#1c7cbf;
+    --green:#4caf7d; --red:#e05555; --blue:#a78bfa;
     --radius:10px; --radius-lg:14px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -21,6 +22,8 @@
   .header-left{display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .header-left h1{font-size:16px;font-weight:600;}
   .badge-live{background:var(--accent);color:#000;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.06em;}
+  .nav-link{color:var(--text2);font-size:12px;text-decoration:none;border:1px solid var(--border2);padding:4px 10px;border-radius:6px;white-space:nowrap;}
+  .nav-link:hover{border-color:var(--accent2);color:var(--text);}
   .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--text3);}
   .status-dot.loading{background:var(--accent);animation:pulse 1s infinite;}
   .status-dot.ok{background:var(--green);}
@@ -57,9 +60,9 @@
   .signal-label-text{font-size:11px;color:var(--text2);}
   .signal-badge{display:inline-block;padding:3px 12px;border-radius:4px;font-size:13px;font-weight:700;letter-spacing:.03em;}
   .sig-strong-buy{background:rgba(76,175,125,.2);color:var(--green);border:1px solid rgba(76,175,125,.4);}
-  .sig-buy       {background:rgba(91,156,246,.2);color:var(--blue); border:1px solid rgba(91,156,246,.4);}
+  .sig-buy       {background:rgba(167,139,250,.2);color:var(--blue); border:1px solid rgba(167,139,250,.4);}
   .sig-neutral   {background:rgba(136,136,136,.2);color:#888;       border:1px solid rgba(136,136,136,.3);}
-  .sig-sell      {background:rgba(232,160,32,.2); color:var(--accent);border:1px solid rgba(232,160,32,.4);}
+  .sig-sell      {background:rgba(46,155,230,.2); color:var(--accent);border:1px solid rgba(46,155,230,.4);}
   .sig-strong-sell{background:rgba(224,85,85,.2);color:var(--red);  border:1px solid rgba(224,85,85,.4);}
   .sig-no-data   {background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
   .signal-score{font-size:11px;color:var(--text3);}
@@ -86,13 +89,15 @@
   .set-filter-wrap{flex:0 0 auto;}
   .set-filter-wrap select{padding:5px 8px;font-size:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);outline:none;cursor:pointer;max-width:220px;}
 
-  /* ===== RARITY BADGES ===== */
+  /* ===== RARITY BADGES (ワンピースカード) ===== */
   .rarity{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:.03em;white-space:nowrap;}
-  .r-SAR{background:rgba(232,160,32,.15);color:var(--accent);border:1px solid rgba(232,160,32,.3);}
-  .r-HR {background:rgba(224,85,85,.15); color:var(--red);   border:1px solid rgba(224,85,85,.3);}
-  .r-SR {background:rgba(91,156,246,.15);color:var(--blue);  border:1px solid rgba(91,156,246,.3);}
-  .r-MA {background:rgba(76,175,125,.15);color:var(--green); border:1px solid rgba(76,175,125,.3);}
-  .r-MUR{background:rgba(200,100,246,.15);color:#d080f6;     border:1px solid rgba(200,100,246,.3);}
+  .r-SEC{background:rgba(232,160,32,.15);color:#e8a020;   border:1px solid rgba(232,160,32,.3);}
+  .r-SR {background:rgba(167,139,250,.15);color:var(--blue);border:1px solid rgba(167,139,250,.3);}
+  .r-L  {background:rgba(224,85,85,.15); color:var(--red);  border:1px solid rgba(224,85,85,.3);}
+  .r-R  {background:rgba(46,155,230,.15);color:var(--accent);border:1px solid rgba(46,155,230,.3);}
+  .r-UC {background:rgba(76,175,125,.15);color:var(--green); border:1px solid rgba(76,175,125,.3);}
+  .r-P  {background:rgba(79,209,197,.15);color:#4fd1c5;     border:1px solid rgba(79,209,197,.3);}
+  .r-TR {background:rgba(240,140,60,.15);color:#f08c3c;     border:1px solid rgba(240,140,60,.3);}
   .r-other{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
 
   /* ===== TABLE (desktop) ===== */
@@ -110,7 +115,7 @@
   tr:last-child td{border-bottom:none;}
   tbody tr{cursor:pointer;transition:background .1s;}
   tbody tr:hover td{background:rgba(255,255,255,.03);}
-  tbody tr.active td{background:rgba(232,160,32,.08);}
+  tbody tr.active td{background:rgba(46,155,230,.08);}
   tbody tr.active .card-link{color:var(--accent);}
   .card-link{color:var(--text);text-decoration:none;font-size:12px;font-weight:500;line-height:1.4;}
   .card-link:hover{color:var(--accent);}
@@ -153,7 +158,7 @@
   /* card row override styles */
   .card-row{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:border-color .15s,background .15s;}
   .card-row:hover{border-color:var(--border2);}
-  .card-row.active{border-color:var(--accent) !important;background:rgba(232,160,32,.04);}
+  .card-row.active{border-color:var(--accent) !important;background:rgba(46,155,230,.04);}
   .card-row.active .mc-name{color:var(--accent);}
   .card-row td{display:block;border:none;padding:0;text-align:left !important;}
 
@@ -171,38 +176,30 @@
   @media(max-width:767px){
     .header{padding:10px 12px;}
     .container{padding:10px;}
-    /* テーブルモードを隠してカードモードを表示 */
     .tbl-outer{overflow:visible;max-height:none;}
     table{min-width:0;display:block;}
     thead{display:none !important;}
     tbody{display:block;}
-    /* mobile sort bar */
     .mobile-sort-bar{display:flex;}
-    /* chart */
     .chart-wrap{height:180px !important;}
     .chart-toggle-btn{display:inline-flex;align-items:center;}
     #chartPanelBody.chart-collapsed{display:none;}
-    /* stats compact */
     .stats-row{gap:5px;}
     .stat-box{min-width:60px;padding:5px 7px;}
     .stat-box-val{font-size:12px;}
     .stat-box-sub{font-size:9px;}
-    /* filter bar: search full-width, chips below */
     .filter-bar{flex-wrap:wrap;}
     .search-wrap{flex:1 1 100%;min-width:0;}
-    /* chips: flex itemとして幅を正しく縮める */
     .filter-chips{flex:1;min-width:0;}
-    /* セットフィルター: モバイルでは幅を抑える */
     .set-filter-wrap{flex:0 0 auto;}
     .set-filter-wrap select{max-width:140px;font-size:11px;padding:4px 6px;}
-    /* card-row を明示的にblockにしてコンテナ幅に収める */
     .card-row{display:block;width:100%;}
+    .header-left h1{font-size:14px;}
   }
   @media(min-width:768px){
-    /* card-row はデスクトップでは通常の<tr>と同じ見た目にする */
     .card-row{background:none;border:none;border-radius:0;margin:0;}
     .card-row:hover td{background:rgba(255,255,255,.03);}
-    .card-row.active td{background:rgba(232,160,32,.08);}
+    .card-row.active td{background:rgba(46,155,230,.08);}
     .card-row td{display:table-cell;border-bottom:1px solid var(--border);padding:7px 10px;}
   }
 </style>
@@ -211,10 +208,10 @@
 
 <div class="header">
   <div class="header-left">
-    <h1>PSA10 相場</h1>
+    <h1>🏴‍☠️ ワンピース PSA10 相場</h1>
     <span class="badge-live">LIVE</span>
-    <a href="./box.html" style="color:var(--text2);font-size:12px;text-decoration:none;border:1px solid var(--border2);padding:4px 10px;border-radius:6px;white-space:nowrap;">BOX・パック →</a>
-    <a href="./onepiece.html" style="color:var(--text2);font-size:12px;text-decoration:none;border:1px solid var(--border2);padding:4px 10px;border-radius:6px;white-space:nowrap;">ワンピース →</a>
+    <a class="nav-link" href="./index.html">ポケモン →</a>
+    <a class="nav-link" href="./box.html">BOX・パック →</a>
   </div>
   <div class="header-right">
     <div class="status-dot loading" id="dot"></div>
@@ -276,7 +273,7 @@
         <span class="result-count" id="resultCount"></span>
       </div>
 
-      <!-- モバイル用ソート（.mobile-sort-barのCSS側で表示制御） -->
+      <!-- モバイル用ソート -->
       <div class="mobile-sort-bar" id="mobileSortBar">
         <label>並替:</label>
         <select id="mobileSortSelect" onchange="onMobileSortChange()">
@@ -305,7 +302,7 @@
               <th class="sortable" onclick="setSort('mx7')"        id="th-mx7" title="直近7日間の最高取引価格">7日高値<span class="sort-icon" id="si-mx7"></span></th>
               <th class="sortable" onclick="setSort('mn7')"        id="th-mn7" title="直近7日間の最安取引価格">7日安値<span class="sort-icon" id="si-mn7"></span></th>
               <th class="sortable" onclick="setSort('med7')"       id="th-med7" title="直近7日間の取引価格の中央値（外れ値に強い実勢相場）">7日中央値<span class="sort-icon" id="si-med7"></span></th>
-              <th class="sortable sort-active" onclick="setSort('dod')"        id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
+              <th class="sortable sort-active" onclick="setSort('dod')" id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
               <th class="sortable" onclick="setSort('wow')"        id="th-wow" title="直近7日中央値 vs その前7日中央値の変化率">週比<span class="sort-icon" id="si-wow"></span></th>
               <th class="sortable" onclick="setSort('trendScore')" id="th-trendScore" title="日次MA5/10/20（5日/10日/20日線）によるトレンド判定">判定<span class="sort-icon" id="si-trendScore"></span></th>
               <th class="sortable" onclick="setSort('roi7')"       id="th-roi7" title="直近7日の実際の安値で仕入れ、スニダン中央値で売った場合の利益率（手数料9.3%+送料¥240控除後）。5%以上=緑">想定利益<span class="sort-icon" id="si-roi7"></span></th>
@@ -328,318 +325,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 // ===== GLOBALS =====
-const DB_URL = 'https://raw.githubusercontent.com/kibidango-kinako/price-tracker/main/data/ranking_database.db';
-const POKEMON_NAME_MAP = {
-  "100076":["ポケモンごっこ"],
-  "100081":["ピカチュウ"],
-  "100085":["エーフィ"],
-  "100543":["ルギア"],
-  "100567":["ルギア"],
-  "101654":["ピカチュウ"],
-  "102294":["レックウザ"],
-  "102412":["レックウザ"],
-  "103054":["ミュウ"],
-  "103073":["ルカリオ"],
-  "103079":["リザードン"],
-  "103080":["ミュウツー"],
-  "103085":["ミュウ"],
-  "103771":["バオッキー"],
-  "103794":["リーフィア"],
-  "103795":["グレイシア"],
-  "103803":["リザードン"],
-  "104514":["ピカチュウ"],
-  "104784":["ピカチュウ"],
-  "105005":["レックウザ"],
-  "105530":["アルセウス"],
-  "105536":["ギラティナ"],
-  "105543":["ダークライ"],
-  "105553":["ピカチュウ"],
-  "105568":["リザードン"],
-  "106796":["ピカチュウ"],
-  "107447":["ピカチュウ"],
-  "107448":["ピカチュウ"],
-  "107497":["イーブイ","カビゴン"],
-  "107553":["ピカチュウ"],
-  "107574":["ミュウツー"],
-  "110938":["ミモザ"],
-  "111992":["ミライドン"],
-  "113254":["レックウザ"],
-  "115267":["リザードン"],
-  "115273":["ミュウツー"],
-  "115274":["ピカチュウ"],
-  "116069":["コイキング"],
-  "120250":["ピカチュウ"],
-  "120748":["ナンジャモ"],
-  "122054":["イーブイ"],
-  "122055":["シャワーズ"],
-  "122056":["サンダース"],
-  "122057":["ブースター"],
-  "122058":["エーフィ"],
-  "122059":["ブラッキー"],
-  "122060":["リーフィア"],
-  "122061":["グレイシア"],
-  "122062":["ニンフィア"],
-  "126327":["ミミッキュ"],
-  "126334":["イーブイ"],
-  "126664":["ピカチュウ"],
-  "126668":["リザードン"],
-  "126676":["ゲンガー"],
-  "127030":["イーブイ"],
-  "127035":["ピカチュウ"],
-  "127809":["ピカチュウ"],
-  "127943":["ゲンガー"],
-  "128084":["ヒトカゲ"],
-  "128085":["リザード"],
-  "128086":["ゼニガメ"],
-  "128089":["ピカチュウ"],
-  "128097":["カビゴン"],
-  "128099":["ミュウツー"],
-  "128101":["リザードン"],
-  "128117":["リザードン"],
-  "128120":["サンダー"],
-  "128121":["ミュウ"],
-  "128122":["エリカ"],
-  "128124":["ミュウ"],
-  "128147":["ピカチュウ"],
-  "128212":["ゲンガー"],
-  "128265":["ミュウツー"],
-  "131236":["ピカチュウ"],
-  "132279":["リザードン"],
-  "132284":["リザードン"],
-  "134393":["ピカチュウ"],
-  "135232":["ピカチュウ"],
-  "137077":["ピカチュウ"],
-  "138599":["ピカチュウ"],
-  "139333":["ピカチュウ"],
-  "141148":["レックウザ"],
-  "141410":["ピカチュウ"],
-  "141411":["ピカチュウ"],
-  "141412":["ミュウ"],
-  "141413":["ミュウ"],
-  "141442":["ピカチュウ"],
-  "141443":["ピカチュウ"],
-  "141444":["ピカチュウ"],
-  "141445":["ピカチュウ"],
-  "141446":["ピカチュウ"],
-  "141447":["ピカチュウ"],
-  "141693":["ブラッキー","ダークライ"],
-  "144403":["カイオーガ"],
-  "146897":["ピカチュウ"],
-  "151753":["リザードン"],
-  "156179":["ピカチュウ"],
-  "160129":["ピカチュウ"],
-  "160147":["ミュウ"],
-  "162095":["リザードン"],
-  "164250":["ミュウ"],
-  "224086":["イーブイ"],
-  "224087":["ゲッコウガ"],
-  "255643":["ゼイユ"],
-  "289056":["ピカチュウ"],
-  "292564":["ゲンガー"],
-  "292565":["ゲンガー"],
-  "292633":["レックウザ"],
-  "321522":["ヤドン","コダック"],
-  "325079":["リザードン"],
-  "328774":["ピカチュウ"],
-  "331667":["ピカチュウ"],
-  "331669":["ピカチュウ"],
-  "332796":["ピカチュウ"],
-  "332798":["ピカチュウ"],
-  "334018":["ピカチュウ"],
-  "358113":["ラティオス"],
-  "381012":["レックウザ"],
-  "386919":["ピカチュウ"],
-  "387059":["ゲンガー","ミミッキュ"],
-  "392852":["ブラッキー"],
-  "393022":["カビゴン"],
-  "395201":["ピカチュウ"],
-  "396023":["ピカチュウ"],
-  "396034":["ミュウツー","ミュウ"],
-  "396082":["レックウザ"],
-  "396084":["ファイア","サンダー","フリーザー"],
-  "396334":["ピカチュウ"],
-  "408333":["ピカチュウ"],
-  "408743":["フーパ"],
-  "411766":["レックウザ"],
-  "411767":["レックウザ"],
-  "418741":["レアコイル"],
-  "418755":["ピカチュウ"],
-  "455594":["グレイシア"],
-  "455595":["ニンフィア"],
-  "455596":["ブラッキー"],
-  "455676":["イーブイ"],
-  "456933":["シャワーズ"],
-  "458562":["サンダース"],
-  "459531":["ブースター"],
-  "466510":["トドロクツキ"],
-  "469625":["リーフィア"],
-  "469628":["エーフィ"],
-  "469630":["イーブイ"],
-  "469638":["ピカチュウ"],
-  "471633":["ブラッキー"],
-  "475194":["ピカチュウ"],
-  "485638":["ナンジャモ"],
-  "485654":["レシラム"],
-  "485655":["ナンジャモ","ハラバリー"],
-  "505952":["リーリエ"],
-  "505956":["リーリエ","ピッピ"],
-  "509405":["マリィ","モルペコ"],
-  "518774":["ピカチュウ"],
-  "525751":["ホウオウ","ヒビキ"],
-  "538636":["ガブリアス","シロナ"],
-  "543243":["コダック"],
-  "544501":["バクフーン","ヒビキ"],
-  "550925":["ニャース"],
-  "568324":["ニドキング"],
-  "568902":["ミュウツー"],
-  "585213":["ゼクロム"],
-  "585221":["レシラム"],
-  "585230":["ビクティニ"],
-  "607932":["ガマゲロゲ"],
-  "607934":["ゼクロム"],
-  "607938":["レシラム"],
-  "618445":["ピカチュウ"],
-  "618446":["ピカチュウ"],
-  "618447":["ピカチュウ"],
-  "657363":["フシギバナ"],
-  "657364":["ルカリオ"],
-  "657365":["サーナイト"],
-  "663636":["リーリエ"],
-  "663637":["リーリエ"],
-  "663638":["ルカリオ"],
-  "663641":["アセロラ"],
-  "664092":["ラティアス"],
-  "664122":["アセロラ"],
-  "671486":["ピカチュウ"],
-  "674418":["ゲンガー"],
-  "674424":["ゴースト"],
-  "687275":["リザードン"],
-  "704380":["ポッチャマ"],
-  "704385":["リザードン"],
-  "704397":["ヒカリ"],
-  "704401":["リザードン"],
-  "704402":["オドリドリ"],
-  "704406":["ヒカリ"],
-  "704407":["リザードン"],
-  "705192":["ピカチュウ"],
-  "722239":["リザードン"],
-  "722241":["ルカリオ"],
-  "724996":["ゲンガー"],
-  "724997":["オーロンゲ"],
-  "727387":["ゼクロム"],
-  "729387":["コダック"],
-  "730089":["ピカチュウ"],
-  "730942":["ミミッキュ"],
-  "730952":["ゲンガー"],
-  "730954":["カイリュー"],
-  "730956":["ピカチュウ"],
-  "730957":["ナンジャモ","ハラバリー"],
-  "730958":["ミュウツー"],
-  "730961":["ゾロアーク"],
-  "730963":["メタグロス","ダイゴ"],
-  "730964":["カイリュー"],
-  "730966":["カナリィ"],
-  "730968":["カイリュー"],
-  "731020":["カナリィ"],
-  "732802":["レックウザ"],
-  "732803":["レックウザ"],
-  "737033":["エリカ","ナンジャモ"],
-  "737035":["イーブイ"],
-  "737036":["ピカチュウ"],
-  "740244":["リザードン"],
-  "740404":["ピカチュウ"],
-  "740407":["ピカチュウ"],
-  "742429":["リーリエ","ピッピ"],
-  "742523":["オーダイル"],
-  "742562":["リザードン"],
-  "744291":["リザードン"],
-  "744298":["ゲンガー"],
-  "752787":["ピッピ"],
-  "753242":["ニャース"],
-  "753274":["メイ"],
-  "753276":["ジガルデ"],
-  "753318":["ジガルデ"],
-  "776365":["ゲッコウガ"],
-  "776368":["チラチーノ"],
-  "776371":["ゲッコウガ"],
-  "819813":["ムク"],
-  "826538":["シャンデラ"],
-  "91118":["ピカチュウ"],
-  "91126":["セレビィ"],
-  "91127":["ピカチュウ"],
-  "91133":["ミュウツー"],
-  "91134":["リザードン"],
-  "91147":["リザードン"],
-  "91154":["ピカチュウ"],
-  "91155":["ピカチュウ"],
-  "91156":["リザードン"],
-  "91157":["フシギバナ"],
-  "91158":["カメックス"],
-  "91159":["コイキング"],
-  "91160":["ブラッキー"],
-  "91161":["ミュウ"],
-  "91163":["ミュウ"],
-  "91167":["レックウザ"],
-  "91176":["ブラッキー"],
-  "91178":["ゲンガー"],
-  "91190":["マリィ"],
-  "91191":["リザードン"],
-  "91206":["マリィ"],
-  "91260":["ピカチュウ"],
-  "91269":["かんこうきゃく"],
-  "91270":["ミュウツー","ミュウ"],
-  "91277":["リーリエ"],
-  "91278":["メイ"],
-  "91279":["ソルガレオ","ルナアーラ"],
-  "91282":["ミュウツー","ミュウ"],
-  "91283":["ファイア","サンダー","フリーザー"],
-  "91290":["ピカチュウ"],
-  "91295":["レックウザ"],
-  "91299":["ブラッキー"],
-  "91334":["レックウザ"],
-  "91377":["ピカチュウ"],
-  "91422":["ピカチュウ"],
-  "91475":["ミュウ"],
-  "91570":["レックウザ"],
-  "92094":["ミュウ"],
-  "93004":["エーフィ"],
-  "93015":["ピカチュウ"],
-  "93016":["ミュウ"],
-  "93017":["レックウザ"],
-  "93021":["ブラッキー"],
-  "93048":["ピッピ","リーリエ"],
-  "93082":["ブラッキー","ダークライ"],
-  "93094":["カスミ"],
-  "93096":["ゲンガー","ミミッキュ"],
-  "93097":["ラティアス","ラティオス"],
-  "93379":["ギラティナ"],
-  "93381":["ピカチュウ"],
-  "95723":["ピカチュウ"],
-  "95724":["モンスターボール"],
-  "96549":["ブラッキー"],
-  "96585":["スターミー"],
-  "96659":["レックウザ"],
-  "96667":["ピカチュウ"],
-  "96673":["ブラッキー"],
-  "96712":["ピカチュウ"],
-  "96714":["レックウザ"],
-  "96729":["ブラッキー"],
-  "96731":["ミミッキュ","アセロラ"],
-  "96741":["ピカチュウ"],
-  "98529":["レシラム"],
-  "98530":["ゼクロム"],
-  "98531":["ミュウ"],
-  "98532":["ミュウツー"],
-  "98533":["ギャラドス"],
-  "98534":["レックウザ"]
-};
+const DB_URL = 'https://raw.githubusercontent.com/kibidango-kinako/price-tracker/main/data/onepiece_database.db';
+const TABLE = 'onepiece_transactions';
 let db = null, chartInst = null, activeApId = null;
 let tableData = [], allOptions = [];
 let sortCol = 'dod', sortDir = -1;
 let filterRarity = 'all', filterText = '', filterSet = 'all', filterProfit = false;
 let showPriceLabels = true;
 let chartRangeHours = 168; // チャート表示期間（null = 全期間）
-let chartPanelOpen = true; // will be set by buildDashboard
+let chartPanelOpen = true;
 let lastWidth = window.innerWidth;
 
 if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
@@ -673,9 +367,12 @@ function median(arr) {
   const s = [...arr].sort((a,b) => a-b), m = s.length >> 1;
   return s.length % 2 ? s[m] : Math.round((s[m-1] + s[m]) / 2);
 }
+// ワンピースのレアリティは SR-P / SEC-P のようにパラレル接尾辞が付くため、
+// 色分けは '-' より前のベースレアリティで判定する（表示は元の文字列のまま）
 function rarityBadge(r) {
-  const known = ['SAR','HR','SR','MA','MUR'];
-  const cls = known.includes(r) ? 'r-'+r : 'r-other';
+  const base = (r || '').split('-')[0];
+  const known = ['SEC','SR','L','R','UC','P','TR'];
+  const cls = known.includes(base) ? 'r-'+base : 'r-other';
   return `<span class="rarity ${cls}">${r||'—'}</span>`;
 }
 
@@ -718,14 +415,14 @@ function calcMA(data, period) {
 
 // ===== 24h/48h変化 =====
 function getTimeWindowChange(apId, hours) {
-  const maxRes = q('SELECT MAX(transaction_date) as d FROM ranking_transactions WHERE apparel_id=?', [apId]);
+  const maxRes = q(`SELECT MAX(transaction_date) as d FROM ${TABLE} WHERE apparel_id=?`, [apId]);
   if (!maxRes.length || !maxRes[0].d) return null;
   const maxDate = maxRes[0].d;
   // 同一 transaction_date に複数取引がある場合、個別行の first/last は順序不定になるため
   // 時刻バケット（分単位）ごとに AVG を取り、最古バケットと最新バケットの平均価格を比較する
   const rows = q(
     `SELECT transaction_date, CAST(AVG(price) AS INT) as avg_p, COUNT(*) as cnt
-     FROM ranking_transactions
+     FROM ${TABLE}
      WHERE apparel_id=? AND transaction_date >= datetime(?, '-${hours} hours')
      GROUP BY transaction_date
      ORDER BY transaction_date ASC`,
@@ -795,7 +492,7 @@ function buildDodMap() {
   // collected_date(収集日)ではなく DATE(transaction_date)(実取引日)で日別平均を比較する
   // → collected_dateが1日分しかなくても実取引が複数日にまたがっていれば前日比を計算できる
   const rows = q(`SELECT apparel_id, DATE(transaction_date) as tx_day, CAST(AVG(price) AS INT) as da
-    FROM ranking_transactions GROUP BY apparel_id, DATE(transaction_date) ORDER BY apparel_id, tx_day DESC`);
+    FROM ${TABLE} GROUP BY apparel_id, DATE(transaction_date) ORDER BY apparel_id, tx_day DESC`);
   const map = {};
   rows.forEach(r => {
     if (!map[r.apparel_id]) map[r.apparel_id] = [];
@@ -808,7 +505,7 @@ function buildTrendMap() {
   // MAは「取引1件ごと」ではなく「1日1点（日次平均）」で計算する。
   // → 取引量の多寡に左右されず、カード間で同じ時間軸(週/月)の比較ができる
   const daily = q(`SELECT apparel_id, DATE(transaction_date) d, CAST(AVG(price) AS INT) p
-    FROM ranking_transactions GROUP BY apparel_id, DATE(transaction_date)
+    FROM ${TABLE} GROUP BY apparel_id, DATE(transaction_date)
     ORDER BY apparel_id, d ASC`);
   const pm = {};
   daily.forEach(r => { if (!pm[r.apparel_id]) pm[r.apparel_id]=[]; pm[r.apparel_id].push(r.p); });
@@ -821,10 +518,10 @@ function buildTrendMap() {
 
 // 直近7日 / その前7日の価格リストをカード別に作る（基準は全体の最新取引日時）
 function buildWeekMap() {
-  const maxD = q('SELECT MAX(transaction_date) as d FROM ranking_transactions')[0].d;
+  const maxD = q(`SELECT MAX(transaction_date) as d FROM ${TABLE}`)[0].d;
   const rows = q(`SELECT apparel_id, price,
       CASE WHEN transaction_date >= datetime(?, '-168 hours') THEN 0 ELSE 1 END as wk
-    FROM ranking_transactions
+    FROM ${TABLE}
     WHERE transaction_date >= datetime(?, '-336 hours')`, [maxD, maxD]);
   const map = {};
   rows.forEach(r => {
@@ -841,16 +538,15 @@ function buildTable() {
   const maxDms = new Date(maxD.replace(' ','T')).getTime();
   const rows = q(`SELECT apparel_id, card_name, rarity, set_name, collection_no, url,
     MIN(rank) as rank, COUNT(*) as cnt, MAX(transaction_date) as last_tx
-    FROM ranking_transactions GROUP BY apparel_id`);
+    FROM ${TABLE} GROUP BY apparel_id`);
 
-  // has_more: DBの has_more 列は過去の誤ったデータが残っているため使わない
-  // 最新収集日の実際の件数をカウントし、24件以上なら has_more=1 と判定する
+  // has_more: 最新収集日の実際の件数が24件以上（＝表示上限）なら + を付ける
   const latestCntRows = q(`
     SELECT t.apparel_id, COUNT(*) as latest_cnt
-    FROM ranking_transactions t
+    FROM ${TABLE} t
     INNER JOIN (
       SELECT apparel_id, MAX(collected_date) as max_date
-      FROM ranking_transactions GROUP BY apparel_id
+      FROM ${TABLE} GROUP BY apparel_id
     ) latest ON t.apparel_id = latest.apparel_id AND t.collected_date = latest.max_date
     GROUP BY t.apparel_id`);
   const latestCntMap = {};
@@ -875,10 +571,8 @@ function buildTable() {
     const snkr = med7 > 0 ? Math.floor((med7*0.907-240)/1.10) : null;
     const mcr  = med7 > 0 ? Math.floor((med7*0.900-160)/1.10) : null;
     // 想定利益率: 直近7日の実際の安値で仕入れ、スニダン中央値で売った場合のROI（手数料9.3%+送料¥240控除後）
-    // 実際に付いた安値ベースなので「その価格で買えた実績がある」＝現実的な利益機会の指標
     const roi7 = (mn7 > 0 && med7 > 0) ? ((med7*0.907 - 240) - mn7) / mn7 * 100 : null;
     const trend = trendMap[r.apparel_id] || { cls:'no-data', score:0, maxScore:0, dataPoints:0 };
-    // 最新収集日の件数が24件以上のときのみ + 表示
     const has_more = (latestCntMap[r.apparel_id] || 0) >= 24 ? 1 : 0;
     // 最終取引からの経過日数（3日以上動きがなければ停滞表示）
     const staleDays = r.last_tx ? Math.floor((maxDms - new Date(r.last_tx.replace(' ','T')).getTime()) / 86400000) : null;
@@ -897,7 +591,7 @@ function getFilteredSorted() {
       if (!h.includes(txt)) return false;
     }
     if (filterRarity !== 'all' && r.rarity !== filterRarity) return false;
-    if (filterSet !== 'all' && !getPokemonNames(r).includes(filterSet)) return false;
+    if (filterSet !== 'all' && getCharacterName(r) !== filterSet) return false;
     if (filterProfit) {
       // 仕入候補: 利益が出る実績があり・流動性があり・下落トレンドでなく・直近も取引がある
       if (r.roi7 === null || r.roi7 < 5) return false;       // 想定利益率5%以上（安値仕入→中央値売りの保守指標）
@@ -940,8 +634,7 @@ function renderTableBody() {
 const chgHtml = (v, prefix='') => v !== null
   ? `<span class="chg ${v>=0?'up':'down'}">${prefix}${v>=0?'+':'▼'}${Math.abs(v).toFixed(1)}%</span>`
   : `<span class="chg flat">${prefix}—</span>`;
-// 想定利益率: 5%以上=緑(狙い目) / 0〜5%=橙(薄利) / マイナス=赤(利益なし)
-// ※安値仕入→中央値売り(手数料後)の保守的な指標のため、5%でも十分に優良
+// 想定利益率: 5%以上=緑(狙い目) / 0〜5%=青(薄利) / マイナス=赤(利益なし)
 const roiHtml = v => {
   if (v === null) return '<span class="chg flat">—</span>';
   const clr = v >= 5 ? 'var(--green)' : v >= 0 ? 'var(--accent)' : 'var(--red)';
@@ -1021,7 +714,6 @@ function updateSortUI() {
     if (th) th.classList.toggle('sort-active', c === sortCol);
     if (si) si.textContent = c === sortCol ? (sortDir === -1 ? '↓' : '↑') : '';
   });
-  // モバイルソートセレクトも同期
   const mss = document.getElementById('mobileSortSelect');
   if (mss) mss.value = sortCol;
   const msb = document.getElementById('mobileSortDirBtn');
@@ -1073,32 +765,35 @@ function buildRarityChips() {
   });
 }
 
-// ===== POKEMON NAME FILTER =====
-function getPokemonNames(r) {
-  // Excel B/C/D列の手動入力ポケモン名を優先、未登録はカード名から自動抽出
-  const mapped = POKEMON_NAME_MAP[String(r.apparel_id)];
-  if (mapped && mapped.length) return mapped;
-  const m = (r.card_name || '').match(/^([぀-ヿ一-鿿]+(?:[&＆][぀-ヿ一-鿿]+)*)/);
-  return m ? [m[1]] : [r.card_name];
+// ===== キャラクター名フィルター =====
+// ワンピースカードはカード名がそのままキャラクター名なので、
+// ':通常版' 'パラレル' や '【英語版】' などの版・種別表記を落として集約する
+function getCharacterName(r) {
+  let n = (r.card_name || '').trim();
+  n = n.replace(/【[^】]*】/g, '');   // 【英語版】【アジア版】等
+  n = n.replace(/[:：].*$/, '');      // ':通常版' ':パラレル' 等
+  n = n.replace(/\s*\([^)]*\)\s*$/, ''); // 末尾の補足括弧
+  return n.trim() || (r.card_name || '—');
 }
 function buildSetFilter() {
   // 表示順: 最新取引日の取引数ランキング（多い順）→ 同数はあいうえお順
-  const latestDay = q('SELECT DATE(MAX(transaction_date)) as d FROM ranking_transactions')[0]?.d;
+  const latestDay = q(`SELECT DATE(MAX(transaction_date)) as d FROM ${TABLE}`)[0]?.d;
   const dayCntByAp = {};
   if (latestDay) {
-    q('SELECT apparel_id, COUNT(*) as c FROM ranking_transactions WHERE DATE(transaction_date)=? GROUP BY apparel_id', [latestDay])
+    q(`SELECT apparel_id, COUNT(*) as c FROM ${TABLE} WHERE DATE(transaction_date)=? GROUP BY apparel_id`, [latestDay])
       .forEach(r => { dayCntByAp[r.apparel_id] = r.c; });
   }
   const cntByName = {};
   tableData.forEach(r => {
     const c = dayCntByAp[r.apparel_id] || 0;
-    getPokemonNames(r).forEach(n => { cntByName[n] = (cntByName[n] || 0) + c; });
+    const n = getCharacterName(r);
+    cntByName[n] = (cntByName[n] || 0) + c;
   });
   const names = Object.keys(cntByName).sort((a,b) =>
     (cntByName[b] - cntByName[a]) || a.localeCompare(b, 'ja'));
   const sel = document.getElementById('setFilter');
-  sel.innerHTML = `<option value="all">ポケモン: すべて</option>` +
-    names.map(n => `<option value="${escJs(n)}">${n}${cntByName[n] ? ' ('+cntByName[n]+')' : ''}</option>`).join('');
+  sel.innerHTML = `<option value="all">キャラクター: すべて</option>` +
+    names.map(n => `<option value="${escJs(n)}">${esc(n)}${cntByName[n] ? ' ('+cntByName[n]+')' : ''}</option>`).join('');
   sel.value = filterSet;
 }
 function onSetFilterChange() {
@@ -1109,7 +804,7 @@ function onSetFilterChange() {
 // ===== CHART SELECT =====
 function buildCardSelect() {
   const cards = q(`SELECT apparel_id, card_name, set_name, collection_no, MIN(rank) as rank
-    FROM ranking_transactions GROUP BY apparel_id ORDER BY MIN(rank)`);
+    FROM ${TABLE} GROUP BY apparel_id ORDER BY MIN(rank)`);
   allOptions = cards.map(c => {
     const name = cleanField(c.card_name) || '—';
     const meta = [cleanField(c.set_name), cleanField(c.collection_no)].filter(Boolean).join(' · ');
@@ -1161,12 +856,12 @@ function renderChart() {
   const apId = document.getElementById('cardSelect').value;
   if (!apId) return;
   // グラフは最新取引から chartRangeHours 分を表示（null = 全期間）
-  const maxDateRes = q('SELECT MAX(transaction_date) as d FROM ranking_transactions WHERE apparel_id=?', [apId]);
+  const maxDateRes = q(`SELECT MAX(transaction_date) as d FROM ${TABLE} WHERE apparel_id=?`, [apId]);
   const maxDate = maxDateRes.length ? maxDateRes[0].d : null;
   const rows = !maxDate ? [] : (chartRangeHours
-    ? q(`SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? AND transaction_date >= datetime(?,'-${chartRangeHours} hours') ORDER BY transaction_date`, [apId, maxDate])
-    : q('SELECT transaction_date, price FROM ranking_transactions WHERE apparel_id=? ORDER BY transaction_date', [apId]));
-  const stats  = q('SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM ranking_transactions WHERE apparel_id=?', [apId])[0];
+    ? q(`SELECT transaction_date, price FROM ${TABLE} WHERE apparel_id=? AND transaction_date >= datetime(?,'-${chartRangeHours} hours') ORDER BY transaction_date`, [apId, maxDate])
+    : q(`SELECT transaction_date, price FROM ${TABLE} WHERE apparel_id=? ORDER BY transaction_date`, [apId]));
+  const stats  = q(`SELECT MIN(price) as mn, MAX(price) as mx, CAST(AVG(price) AS INT) as avg, COUNT(*) as cnt FROM ${TABLE} WHERE apparel_id=?`, [apId])[0];
   const ch24   = getTimeWindowChange(apId, 24);
   const ch48   = getTimeWindowChange(apId, 48);
   const opt    = allOptions.find(o => o.value === String(apId));
@@ -1174,9 +869,8 @@ function renderChart() {
   const labels = rows.map(r => (r.transaction_date||'').replace('T',' ').substring(5,16));
   const prices = rows.map(r => r.price);
   // MAは日次（1日1点の平均）で計算。全期間の日次系列で算出し、表示中の各取引にその日のMA値を割り当てる
-  // → 7日表示でも過去データからMA20まで描ける／取引量に依存しない一貫したトレンド線になる
   const daily   = q(`SELECT DATE(transaction_date) d, CAST(AVG(price) AS INT) p
-    FROM ranking_transactions WHERE apparel_id=? GROUP BY DATE(transaction_date) ORDER BY d ASC`, [apId]);
+    FROM ${TABLE} WHERE apparel_id=? GROUP BY DATE(transaction_date) ORDER BY d ASC`, [apId]);
   const dPrices = daily.map(r => r.p);
   const dMA = { 5:calcMA(dPrices,5), 10:calcMA(dPrices,10), 20:calcMA(dPrices,20) };
   const maByDay = {};
@@ -1196,16 +890,16 @@ function renderChart() {
       labels,
       datasets: [
         { type:'line', label:'取引価格', data:prices,
-          borderColor:'#e8a020', backgroundColor:'rgba(232,160,32,0.06)', borderWidth:2,
-          pointRadius:ptRadius, pointBackgroundColor:'#e8a020', pointBorderColor:'#0f0f0f', pointBorderWidth:2,
+          borderColor:'#2e9be6', backgroundColor:'rgba(46,155,230,0.07)', borderWidth:2,
+          pointRadius:ptRadius, pointBackgroundColor:'#2e9be6', pointBorderColor:'#0f0f0f', pointBorderWidth:2,
           tension:0.2, fill:true, order:4,
-          datalabels:{ display: showPriceLabels ? 'auto' : false, color:'#e8a020',
+          datalabels:{ display: showPriceLabels ? 'auto' : false, color:'#2e9be6',
             backgroundColor:'rgba(15,15,15,0.82)', borderRadius:3, padding:{top:2,bottom:2,left:4,right:4},
             font:{ size: prices.length > 60 ? 8 : 9, weight:'bold' },
             formatter: v => (v != null) ? '¥'+parseInt(v).toLocaleString() : null,
             anchor:'end', align:'top', offset:3, clamp:true } },
         { type:'line', label:'MA5(5日)',  data:ma5,  borderColor:'#4caf7d', borderWidth:1.5, borderDash:[5,3], pointRadius:0, stepped:true, fill:false, spanGaps:false, order:3, datalabels:{display:false} },
-        { type:'line', label:'MA10(10日)', data:ma10, borderColor:'#5b9cf6', borderWidth:1.5, borderDash:[5,3], pointRadius:0, stepped:true, fill:false, spanGaps:false, order:2, datalabels:{display:false} },
+        { type:'line', label:'MA10(10日)', data:ma10, borderColor:'#a78bfa', borderWidth:1.5, borderDash:[5,3], pointRadius:0, stepped:true, fill:false, spanGaps:false, order:2, datalabels:{display:false} },
         { type:'line', label:'MA20(20日)', data:ma20, borderColor:'#e05555', borderWidth:1.5, borderDash:[5,3], pointRadius:0, stepped:true, fill:false, spanGaps:false, order:1, datalabels:{display:false} }
       ]
     },
@@ -1227,9 +921,9 @@ function renderChart() {
   const lastVal = a => { for (let i = a.length-1; i >= 0; i--) if (a[i] != null) return a[i]; return null; };
   const [lv5, lv10, lv20] = [lastVal(ma5), lastVal(ma10), lastVal(ma20)];
   document.getElementById('chartLegend').innerHTML = `
-    <div class="legend-item"><div style="width:20px;height:2px;background:#e8a020;border-radius:2px"></div>取引価格</div>
+    <div class="legend-item"><div style="width:20px;height:2px;background:#2e9be6;border-radius:2px"></div>取引価格</div>
     <div class="legend-item" style="color:#4caf7d"><div style="width:20px;border-top:2px dashed #4caf7d"></div>MA5(5日)${lv5 ? '  '+fmt(lv5) : '  —'}</div>
-    <div class="legend-item" style="color:#5b9cf6"><div style="width:20px;border-top:2px dashed #5b9cf6"></div>MA10(10日)${lv10 ? '  '+fmt(lv10) : '  —'}</div>
+    <div class="legend-item" style="color:#a78bfa"><div style="width:20px;border-top:2px dashed #a78bfa"></div>MA10(10日)${lv10 ? '  '+fmt(lv10) : '  —'}</div>
     <div class="legend-item" style="color:#e05555"><div style="width:20px;border-top:2px dashed #e05555"></div>MA20(20日)${lv20 ? '  '+fmt(lv20) : '  —'}</div>`;
 }
 
