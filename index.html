@@ -136,8 +136,18 @@
   .chart-toggle-btn{display:none;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;}
   .chart-toggle-btn:hover{border-color:var(--accent2);color:var(--text);}
 
+  /* ===== CARD THUMBNAILS ===== */
+  .cell-name-wrap{display:flex;align-items:center;gap:8px;min-width:0;}
+  .card-thumb{width:34px;height:47px;flex-shrink:0;border-radius:3px;object-fit:cover;background:var(--bg3);display:block;transition:transform .12s;position:relative;}
+  .card-thumb:hover{transform:scale(4.2);z-index:500;box-shadow:0 4px 20px rgba(0,0,0,.6);}
+  .thumb-ph{width:34px;height:47px;flex-shrink:0;border-radius:3px;background:var(--bg3);border:1px dashed var(--border2);}
+  td:first-child{position:relative;}
+
   /* ===== COMPACT MOBILE CARD ===== */
-  .mc-card{padding:8px 12px;}
+  .mc-card{padding:8px 10px;display:flex;gap:9px;align-items:center;}
+  .mc-thumb{width:42px;height:58px;flex-shrink:0;border-radius:4px;object-fit:cover;background:var(--bg3);}
+  .mc-thumb-ph{width:42px;height:58px;flex-shrink:0;border-radius:4px;background:var(--bg3);border:1px dashed var(--border2);}
+  .mc-body{flex:1;min-width:0;}
   .mc-row1{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:3px;}
   .mc-name-area{display:flex;align-items:center;gap:5px;min-width:0;flex:1;overflow:hidden;}
   .mc-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;color:var(--text);text-decoration:none;}
@@ -634,7 +644,7 @@ const POKEMON_NAME_MAP = {
   "98534":["レックウザ"]
 };
 let db = null, chartInst = null, activeApId = null;
-let tableData = [], allOptions = [];
+let tableData = [], allOptions = [], cardImages = {};
 let sortCol = 'dod', sortDir = -1;
 let filterRarity = 'all', filterText = '', filterSet = 'all', filterProfit = false;
 let showPriceLabels = true;
@@ -687,10 +697,14 @@ async function loadData(bust = false) {
   try {
     // 初回はCDNキャッシュを活かして高速に読み込む（raw.githubusercontentは約5分でキャッシュ更新）
     // 「更新」ボタンのときだけキャッシュバスターで最新を強制取得
+    // カード画像マップはDB取得と並行で読み込む（失敗しても画像なしで続行）
+    const imgPromise = fetch('data/card_images.json' + (bust ? '?t=' + Date.now() : ''))
+      .then(r => r.ok ? r.json() : {}).catch(() => ({}));
     const res = await fetch(DB_URL + (bust ? '?t=' + Date.now() : ''));
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const SQL = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/' + f });
     db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
+    cardImages = await imgPromise;
     const now = new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
     setStatus(now + ' 更新','ok');
     buildDashboard();
@@ -958,8 +972,12 @@ function renderRows(sorted) {
     const scoreInfo  = r.trend.maxScore > 0 ? ` title="${r.trend.score}/${r.trend.maxScore}点 (${r.trend.dataPoints}件)"` : '';
     const trendHtml  = `<span class="signal-badge sig-${r.trend.cls}"${scoreInfo} style="font-size:10px;padding:2px 8px;cursor:default">${trendLabel}</span>`;
     const isActive   = r.apparel_id == activeApId;
+    const imgInfo = cardImages[String(r.apparel_id)];
+    const thumbHtml = imgInfo
+      ? `<img class="card-thumb" src="${imgInfo.img}" loading="lazy" alt="">`
+      : '<div class="thumb-ph"></div>';
     return `<tr class="${isActive?'active':''}" onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}">
-      <td><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${esc(fullName)}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</td>
+      <td><div class="cell-name-wrap">${thumbHtml}<div style="min-width:0"><a class="card-link" href="${r.url||'#'}" target="_blank" onclick="event.stopPropagation()">${esc(fullName)}</a>${meta?`<div class="card-meta">${meta}</div>`:''}</div></div></td>
       <td style="text-align:center">${rarityBadge(r.rarity)}</td>
       <td style="color:var(--text3);font-size:11px">${r.rank?'#'+r.rank:'—'}</td>
       <td style="color:var(--blue)" title="全期間 ${r.cnt}件">${r.cnt7}${r.has_more?'<sup style="color:var(--accent);font-size:9px;margin-left:1px">+</sup>':''}</td>
@@ -987,9 +1005,15 @@ function renderCards(sorted) {
     if (r.mcr)  buyParts.push('M ' + fmtShort(r.mcr));
     const rankStr = r.rank ? '#' + r.rank + ' &middot; ' : '';
     const staleStr = r.staleDays >= 3 ? ` &middot; <span style="color:var(--accent)">最終 ${staleDate(r.last_tx)}</span>` : '';
+    const imgInfo = cardImages[String(r.apparel_id)];
+    const thumbHtml = imgInfo
+      ? `<img class="mc-thumb" src="${imgInfo.img}" loading="lazy" alt="">`
+      : '<div class="mc-thumb-ph"></div>';
     return `<tr class="card-row${isActive?' active':''}" onclick="selectCard('${escJs(r.apparel_id)}',this)" data-apid="${r.apparel_id}">
       <td>
         <div class="mc-card">
+          ${thumbHtml}
+          <div class="mc-body">
           <!-- 行1: カード名（レア+No.含む） | トレンド判定 -->
           <div class="mc-row1">
             <div class="mc-name-area">
@@ -1007,6 +1031,7 @@ function renderCards(sorted) {
             <span class="mc-hilow">利 ${roiHtml(r.roi7)}&ensp;高 ${fmtShort(r.mx7)}&ensp;低 ${fmtShort(r.mn7)}${staleStr}</span>
             ${buyParts.length ? `<span class="mc-buy">${buyParts.join(' / ')}</span>` : ''}
           </div>
+          </div><!-- /mc-body -->
         </div>
       </td>
     </tr>`;
