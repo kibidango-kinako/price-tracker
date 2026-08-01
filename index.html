@@ -721,6 +721,26 @@ function q(sql, params) {
   return values.map(r => Object.fromEntries(columns.map((c,i) => [c, r[i]])));
 }
 
+// ===== 現在ランク =====
+// ranking_transactions.rank は「その取引を収集した当時のランク」なので、
+// 収集リストのランクを振り直すと新旧が混ざり MIN(rank) では古い順位が出てしまう。
+// 収集のたびに全カード分が更新される card_master を正とし、無い場合だけ従来値にフォールバックする。
+let rankMap = null;
+function getRankMap() {
+  if (rankMap) return rankMap;
+  rankMap = {};
+  try {
+    q('SELECT apparel_id, rank FROM card_master').forEach(r => { rankMap[r.apparel_id] = r.rank; });
+  } catch (e) {
+    rankMap = {}; // card_master がまだ無い古いDB
+  }
+  return rankMap;
+}
+const rankOf = (apId, fallback) => {
+  const r = getRankMap()[apId];
+  return (r === undefined || r === null) ? fallback : r;
+};
+
 // ===== MA =====
 function calcMA(data, period) {
   return data.map((_, i) => {
@@ -856,6 +876,7 @@ function buildTable() {
   const rows = q(`SELECT apparel_id, card_name, rarity, set_name, collection_no, url,
     MIN(rank) as rank, COUNT(*) as cnt, MAX(transaction_date) as last_tx
     FROM ranking_transactions GROUP BY apparel_id`);
+  rows.forEach(r => { r.rank = rankOf(r.apparel_id, r.rank); });
 
   // has_more: DBの has_more 列は過去の誤ったデータが残っているため使わない
   // 最新収集日の実際の件数をカウントし、24件以上なら has_more=1 と判定する
@@ -1134,7 +1155,9 @@ function onSetFilterChange() {
 // ===== CHART SELECT =====
 function buildCardSelect() {
   const cards = q(`SELECT apparel_id, card_name, set_name, collection_no, MIN(rank) as rank
-    FROM ranking_transactions GROUP BY apparel_id ORDER BY MIN(rank)`);
+    FROM ranking_transactions GROUP BY apparel_id`);
+  cards.forEach(c => { c.rank = rankOf(c.apparel_id, c.rank); });
+  cards.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
   allOptions = cards.map(c => {
     const name = cleanField(c.card_name) || '—';
     const meta = [cleanField(c.set_name), cleanField(c.collection_no)].filter(Boolean).join(' · ');
