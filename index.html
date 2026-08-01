@@ -704,6 +704,7 @@ async function loadData(bust = false) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const SQL = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/' + f });
     db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
+    rankMap = null;  // 新しいDBを読んだのでランクのキャッシュを捨てる
     cardImages = await imgPromise;
     const now = new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
     setStatus(now + ' 更新','ok');
@@ -725,15 +726,19 @@ function q(sql, params) {
 // ranking_transactions.rank は「その取引を収集した当時のランク」なので、
 // 収集リストのランクを振り直すと新旧が混ざり MIN(rank) では古い順位が出てしまう。
 // 収集のたびに全カード分が更新される card_master を正とし、無い場合だけ従来値にフォールバックする。
+// rankMap は DB を読み込み直すたびに loadData() で null に戻すこと。
+// （空オブジェクトも truthy なので、初回に card_master が無いDBを掴むと
+//   キャッシュが空のまま固定され、新しいDBを読んでも反映されなくなる）
 let rankMap = null;
 function getRankMap() {
-  if (rankMap) return rankMap;
-  rankMap = {};
+  if (rankMap !== null) return rankMap;
+  const m = {};
   try {
-    q('SELECT apparel_id, rank FROM card_master').forEach(r => { rankMap[r.apparel_id] = r.rank; });
+    q('SELECT apparel_id, rank FROM card_master').forEach(r => { m[r.apparel_id] = r.rank; });
   } catch (e) {
-    rankMap = {}; // card_master がまだ無い古いDB
+    /* card_master がまだ無い古いDB → 空のまま従来値にフォールバック */
   }
+  rankMap = m;
   return rankMap;
 }
 const rankOf = (apId, fallback) => {
