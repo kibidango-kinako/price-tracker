@@ -338,7 +338,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 // ===== GLOBALS =====
-const DB_URL = 'https://raw.githubusercontent.com/kibidango-kinako/price-tracker/main/data/ranking_database.db';
+// DBは同一オリジン(GitHub Pages)から取得する。
+// raw.githubusercontent.com はレート制限(429)がありダッシュボードが開けなくなることがある
+const DB_URL = 'data/ranking_database.db';
 const POKEMON_NAME_MAP = {
   "100076":["ポケモンごっこ"],
   "100081":["ピカチュウ"],
