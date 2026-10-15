@@ -93,13 +93,14 @@
   .spinner{width:28px;height:28px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
 </style>
+<link rel="stylesheet" href="assets/purchase.css">
 </head>
 <body>
 
 <div class="header">
   <div class="header-left">
     <h1>BOX・パック 相場</h1>
-    <span class="badge-live">LIVE</span>
+    <span class="badge-live">成約データ</span>
     <a class="nav-link" href="./index.html">PSA10 →</a>
     <a class="nav-link" href="./onepiece.html">ワンピース →</a>
   </div>
@@ -134,7 +135,7 @@
         <button class="chip range-chip" data-d="30">30日</button>
         <button class="chip range-chip" data-d="all">全期間</button>
       </div>
-      <div class="stats-row" id="statsRow"></div>
+      <p class="purchase-note">成約は1BOX・1パックあたり単価です。出品価格は成約価格と異なり、パックは出品数量・単位が未確認のため非表示です。日次集計はデータ収集基準日（下記）を使用します。</p><div class="stats-row" id="statsRow"></div>
       <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
       <div class="chart-legend">
         <div class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>取引単価</div>
@@ -144,7 +145,7 @@
 
     <!-- 相場一覧 -->
     <div class="panel">
-      <div class="section-title">本日の相場一覧</div>
+      <div class="section-title">収集基準日の相場一覧</div>
       <div class="filter-bar">
         <button class="chip type-chip active" data-t="all">すべて</button>
         <button class="chip type-chip" data-t="BOX">BOX</button>
@@ -163,7 +164,7 @@
               <th data-k="count" class="sort-active" id="defaultSort">取引数</th>
               <th data-k="units">販売個数</th>
               <th data-k="avg_price">平均単価</th>
-              <th data-k="chg">前日比</th>
+              <th data-k="chg">前回取引日比</th>
               <th data-k="min_price">最小</th>
               <th data-k="max_price">最大</th>
               <th data-k="lowest_price">出品最安</th>
@@ -177,10 +178,12 @@
   </div>
 </div>
 
+<script src="assets/purchase.js"></script>
+<script src="assets/box-purchase.js"></script>
 <script>
 const DB_URL = './box_data.json';
 let DATA = null;
-let dailyByProduct = {};   // apparel_id -> [{date, avg, count}]（統計・前日比用）
+let dailyByProduct = {};   // apparel_id -> [{date, avg, count}]（統計・前回取引日比用）
 let txsByProduct = {};     // apparel_id -> [{t, price, count}] 取引ごと（同一時刻は平均）
 let askByProduct = {};     // apparel_id -> {date: lowest_price}
 let prevAvgByProduct = {}; // apparel_id -> 前日平均
@@ -206,12 +209,12 @@ async function loadData(bust) {
     DATA = await res.json();
     buildIndexes();
     render();
-    setStatus('ok', '更新: ' + DATA.generated_at + '（取引 ' + DATA.total_records.toLocaleString() + '件）');
+    setStatus('ok', 'データ生成: ' + DATA.generated_at + ' / 収集基準日: ' + DATA.today + '（取引 ' + DATA.total_records.toLocaleString() + '件）');
   } catch (e) {
     setStatus('error', '読み込み失敗: ' + e.message);
   }
   document.getElementById('loadingView').style.display = 'none';
-  document.getElementById('mainView').style.display = '';
+  document.getElementById('mainView').style.display = DATA ? '' : 'none';
 }
 
 function buildIndexes() {
@@ -285,6 +288,7 @@ function onSelectChange() {
 }
 
 function renderChart() {
+  renderBoxPurchase();
   const p = productList.find(x => x.apparel_id === selectedId);
   document.getElementById('chartName').textContent = p ? p.product_name : '—';
   if (!p) return;
@@ -318,17 +322,17 @@ function renderChart() {
     chgHtml = '<span class="chg ' + cls + '">' + sign + pct.toFixed(1) + '%</span>';
   }
   document.getElementById('statsRow').innerHTML =
-    '<div class="stat-box"><div class="stat-box-label">本日平均単価</div><div class="stat-box-val">' + yen(tAvg) + '</div></div>' +
-    '<div class="stat-box"><div class="stat-box-label">前日比</div><div class="stat-box-val">' + chgHtml + '</div></div>' +
-    '<div class="stat-box"><div class="stat-box-label">本日取引数</div><div class="stat-box-val">' + tCnt + '件</div></div>' +
-    '<div class="stat-box"><div class="stat-box-label">出品最安値</div><div class="stat-box-val">' + yen(asks[today]) + '</div>' +
+    '<div class="stat-box"><div class="stat-box-label">収集基準日の平均単価</div><div class="stat-box-val">' + yen(tAvg) + '</div></div>' +
+    '<div class="stat-box"><div class="stat-box-label">前回取引日比</div><div class="stat-box-val">' + chgHtml + '</div></div>' +
+    '<div class="stat-box"><div class="stat-box-label">収集基準日の取引数</div><div class="stat-box-val">' + tCnt + '件</div></div>' +
+    '<div class="stat-box"><div class="stat-box-label">出品最安値</div><div class="stat-box-val">' + (p.product_type === 'パック' ? '単位未確認' : yen(asks[today])) + '</div>' +
       '<div class="stat-box-sub"><a class="card-link" style="font-size:10px;color:var(--blue)" href="' + p.url + '" target="_blank" rel="noopener">スニダンで見る ↗</a></div></div>';
 
   const ds = [
     {label: '取引単価', data: txs.map(x => x.price), borderColor: '#e8a020',
      backgroundColor: 'rgba(232,160,32,.1)', spanGaps: true, tension: .25,
      pointRadius: txs.length > 120 ? 0 : 2.5, fill: true},
-    {label: '出品最安値', data: labels.map(t => asks[t.slice(0, 10)] ?? null), borderColor: '#5b9cf6',
+    {label: '出品最安値', data: labels.map(t => p.product_type === 'パック' ? null : (asks[t.slice(0, 10)] ?? null)), borderColor: '#5b9cf6',
      backgroundColor: 'transparent', spanGaps: true, tension: .25, pointRadius: 0, borderDash: [5, 4]},
   ];
   if (chart) chart.destroy();
@@ -393,7 +397,7 @@ function renderTable() {
       '<td>' + chgHtml + '</td>' +
       '<td>' + yen(r.min_price) + '</td>' +
       '<td>' + yen(r.max_price) + '</td>' +
-      '<td>' + yen(r.lowest_price) + '</td>' +
+      '<td>' + (r.product_type === 'パック' ? '単位未確認' : yen(r.lowest_price)) + '</td>' +
       '</tr>';
   }).join('');
   tb.querySelectorAll('tr').forEach(tr => tr.addEventListener('click', () => {
