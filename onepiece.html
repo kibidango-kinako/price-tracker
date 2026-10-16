@@ -338,7 +338,7 @@ let tableData = [], allOptions = [];
 let aggregationNow = '';
 let sortCol = 'roi7', sortDir = -1;
 let filterRarity = 'all', filterText = '', filterSet = 'all', filterProfit = false;
-let showPriceLabels = true;
+let showPriceLabels = false;
 let chartRangeHours = 168; // チャート表示期間（null = 全期間）
 let chartPanelOpen = true;
 let lastWidth = window.innerWidth;
@@ -591,16 +591,7 @@ function getFilteredSorted() {
     return true;
   });
   // sortDir: -1 = 降順（大きい順）, 1 = 昇順（小さい順）。nullは常に末尾
-  return [...filtered].sort((a,b) => {
-    const va = a[sortCol], vb = b[sortCol];
-    if (sortCol === 'rank') {
-      if (!va && !vb) return 0; if (!va) return 1; if (!vb) return -1;
-      return sortDir === 1 ? va-vb : vb-va;
-    }
-    if (va === null && vb === null) return 0;
-    if (va === null) return 1; if (vb === null) return -1;
-    return sortDir * (va - vb);
-  });
+  return [...filtered].sort((a,b) => Purchase.compareRows(a,b,sortCol,sortDir));
 }
 
 // ===== RENDER TABLE / CARDS =====
@@ -647,10 +638,11 @@ function updateSortUI() {
   if (mss) mss.value = sortCol;
   const msb = document.getElementById('mobileSortDirBtn');
   if (msb) msb.textContent = sortDir === -1 ? '↓ 降順' : '↑ 昇順';
+  PurchaseUI.syncSort();
 }
 
 function setSort(col) {
-  sortDir = (sortCol === col) ? -sortDir : (col === 'rank' ? 1 : -1);
+  sortDir = (sortCol === col) ? -sortDir : (['rank','card_name'].includes(col) ? 1 : -1);
   sortCol = col;
   updateSortUI();
   renderTableBody();
@@ -658,7 +650,7 @@ function setSort(col) {
 
 function onMobileSortChange() {
   const col = document.getElementById('mobileSortSelect').value;
-  sortDir = col === 'rank' ? 1 : -1;
+  sortDir = ['rank','card_name'].includes(col) ? 1 : -1;
   sortCol = col;
   document.getElementById('mobileSortDirBtn').textContent = sortDir === -1 ? '↓ 降順' : '↑ 昇順';
   renderTableBody();
@@ -844,8 +836,8 @@ function renderChart() {
         datalabels:{ display:false }
       },
       scales: {
-        x:{ ticks:{ color:'#666', font:{size:11}, maxTicksLimit:10, maxRotation:30 }, grid:{ color:'rgba(255,255,255,0.05)' } },
-        y:{ grace:'15%', ticks:{ color:'#666', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(1).replace(/\.0$/,'')+'万' : '¥'+v.toLocaleString() }, grid:{ color:'rgba(255,255,255,0.05)' } }
+        x:{ ticks:{ color:'#aab4c3', font:{size:11}, maxTicksLimit:isMobile()?4:10, maxRotation:30 }, grid:{ color:'rgba(255,255,255,0.05)' } },
+        y:{ grace:'15%', ticks:{ color:'#aab4c3', font:{size:11}, callback: v => v>=10000 ? '¥'+(v/10000).toFixed(1).replace(/\.0$/,'')+'万' : '¥'+v.toLocaleString() }, grid:{ color:'rgba(255,255,255,0.05)' } }
       }
     }
   });

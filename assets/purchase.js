@@ -42,7 +42,17 @@
     const confidence = row.identityUncertain ? '低' : row.cnt7 >= 20 && age <= 1 ? '高' : row.cnt7 >= s.minTrades && age <= s.maxAge ? '中' : '低';
     return {...calc, reference:ref, age, eligible, label, reasons, confidence, hasCost};
   }
-  const api = {defaults, timestamp, calculate, assess};
+  // Missing values always follow valid values, regardless of sort direction.
+  function compareRows(a,b,key,direction=-1) {
+    const x=a[key], y=b[key];
+    const missing=v=>v==null || (typeof v==='number' && !Number.isFinite(v)) || v==='' || (key==='rank' && typeof v==='number' && v<=0);
+    if(missing(x) && missing(y)) return 0;
+    if(missing(x)) return 1;
+    if(missing(y)) return -1;
+    return direction * (typeof x==='string' || typeof y==='string'
+      ? String(x).localeCompare(String(y),'ja',{numeric:true}) : x-y);
+  }
+  const api = {defaults, timestamp, calculate, assess, compareRows};
   if (typeof module !== 'undefined') module.exports = api;
   else root.Purchase = api;
 })(typeof window !== 'undefined' ? window : globalThis);
