@@ -99,11 +99,14 @@
 
 <div class="header">
   <div class="header-left">
-    <h1>BOX・パック 相場</h1>
+    <a class="brand" href="./index.html"><span class="brand-mark" aria-hidden="true">◈</span><h1>CARD / MARKET</h1></a>
     <span class="badge-live">成約データ</span>
-    <a class="nav-link" href="./index.html">PSA10 →</a>
-    <a class="nav-link" href="./onepiece.html">ワンピース →</a>
   </div>
+  <nav class="market-nav" aria-label="マーケットの切替">
+    <a href="./index.html">ポケモン</a>
+    <a href="./onepiece.html">ワンピース</a>
+    <a href="./box.html" aria-current="page">BOX・パック</a>
+  </nav>
   <div class="header-right">
     <div class="status-dot loading" id="dot"></div>
     <span id="statusText">読み込み中...</span>
@@ -378,6 +381,9 @@ function tableRows() {
 }
 
 function renderTable() {
+  document.getElementById('boxSortSelect').value=sortKey;
+  document.getElementById('boxSortDirection').textContent=sortDir===-1?'↓ 降順':'↑ 昇順';
+  document.getElementById('tblBody').closest('.panel').querySelector('.section-title').textContent=DATA.today+' の相場一覧';
   const rows = tableRows();
   const tb = document.getElementById('tblBody');
   document.getElementById('resultCount').textContent = rows.length + '商品';
@@ -389,21 +395,21 @@ function renderTable() {
       chgHtml = '<span class="chg ' + cls + '">' + (r.chg > 0 ? '+' : '') + r.chg.toFixed(1) + '%</span>';
     }
     return '<tr data-id="' + r.apparel_id + '" class="' + (r.apparel_id === selectedId ? 'active' : '') + '">' +
-      '<td><a class="card-link" href="' + r.url + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + r.product_name + '</a></td>' +
-      '<td><span class="type-badge t-' + r.product_type + '">' + r.product_type + '</span></td>' +
-      '<td>' + r.count + '件</td>' +
-      '<td>' + (r.units || '—') + '</td>' +
-      '<td class="price-avg">' + yen(r.avg_price) + '</td>' +
-      '<td>' + chgHtml + '</td>' +
-      '<td>' + yen(r.min_price) + '</td>' +
-      '<td>' + yen(r.max_price) + '</td>' +
-      '<td>' + (r.product_type === 'パック' ? '単位未確認' : yen(r.lowest_price)) + '</td>' +
+      '<td><button class="purchase-title-button" type="button">' + r.product_name + '</button><div class="purchase-small">利益を計算 ↗</div></td>' +
+      '<td data-label="種別"><span class="type-badge t-' + r.product_type + '">' + r.product_type + '</span></td>' +
+      '<td data-label="取引数">' + r.count + '件</td>' +
+      '<td data-label="販売個数">' + (r.units || '—') + '</td>' +
+      '<td data-label="平均単価" class="price-avg">' + yen(r.avg_price) + '</td>' +
+      '<td data-label="前回取引日比">' + chgHtml + '</td>' +
+      '<td data-label="最小">' + yen(r.min_price) + '</td>' +
+      '<td data-label="最大">' + yen(r.max_price) + '</td>' +
+      '<td data-label="出品最安">' + (r.product_type === 'パック' ? '単位未確認' : yen(r.lowest_price)) + '</td>' +
       '</tr>';
   }).join('');
   tb.querySelectorAll('tr').forEach(tr => tr.addEventListener('click', () => {
     selectedId = tr.dataset.id;
     renderSelect(); renderChart(); highlightRow();
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    openBoxPurchase();
   }));
 }
 
@@ -443,6 +449,7 @@ document.querySelectorAll('th[data-k]').forEach(th => th.addEventListener('click
   renderTable();
 }));
 
+initBoxLayout();
 loadData(false);
 </script>
 </body>
