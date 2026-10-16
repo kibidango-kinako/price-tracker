@@ -395,7 +395,7 @@ function renderTable() {
       chgHtml = '<span class="chg ' + cls + '">' + (r.chg > 0 ? '+' : '') + r.chg.toFixed(1) + '%</span>';
     }
     return '<tr data-id="' + r.apparel_id + '" class="' + (r.apparel_id === selectedId ? 'active' : '') + '">' +
-      '<td><button class="purchase-title-button" type="button">' + r.product_name + '</button><div class="purchase-small">利益を計算 ↗</div></td>' +
+      '<td><button class="purchase-title-button" type="button">' + r.product_name + '</button><div class="card-actions"><span class="purchase-small">利益を計算</span><button class="purchase-secondary" data-box-chart="true">グラフ</button><a class="card-market-link" href="' + r.url + '" target="_blank" rel="noopener noreferrer">スニダン ↗</a></div></td>' +
       '<td data-label="種別"><span class="type-badge t-' + r.product_type + '">' + r.product_type + '</span></td>' +
       '<td data-label="取引数">' + r.count + '件</td>' +
       '<td data-label="販売個数">' + (r.units || '—') + '</td>' +
@@ -406,10 +406,11 @@ function renderTable() {
       '<td data-label="出品最安">' + (r.product_type === 'パック' ? '単位未確認' : yen(r.lowest_price)) + '</td>' +
       '</tr>';
   }).join('');
-  tb.querySelectorAll('tr').forEach(tr => tr.addEventListener('click', () => {
+  tb.querySelectorAll('tr').forEach(tr => tr.addEventListener('click', e => {
+    if(e.target.closest('a')) return;
     selectedId = tr.dataset.id;
     renderSelect(); renderChart(); highlightRow();
-    openBoxPurchase();
+    if(e.target.closest('[data-box-chart]')) { document.getElementById('boxChartDisclosure').open=true; renderChart(); document.getElementById('boxChartDisclosure').scrollIntoView({behavior:'smooth',block:'start'}); } else openBoxPurchase();
   }));
 }
 

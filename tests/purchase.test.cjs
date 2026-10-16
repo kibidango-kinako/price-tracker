@@ -45,3 +45,16 @@ test('ambiguous product variants cannot become candidates',()=>{
 test('budget includes acquisition fees',()=>{
  assert.equal(P.assess(row,{budget:20000,buyFees:1000},19500,now).eligible,false);
 });
+test('sorting puts missing values last in both directions and keeps zero and negative profit',()=>{
+ const rows=[{v:null},{v:0},{v:-100},{v:200},{v:NaN}];
+ assert.deepEqual([...rows].sort((a,b)=>P.compareRows(a,b,'v',1)).map(r=>r.v),[-100,0,200,null,NaN]);
+ assert.deepEqual([...rows].sort((a,b)=>P.compareRows(a,b,'v',-1)).map(r=>r.v),[200,0,-100,null,NaN]);
+});
+test('card-name sorting supports Japanese and natural numeric order',()=>{
+ assert.ok(P.compareRows({name:'カード2'},{name:'カード10'},'name',1)<0);
+ assert.ok(P.compareRows({v:20},{v:10},'v',-1)<0);
+});
+test('unknown rank zero follows ranked cards',()=>{
+ assert.ok(P.compareRows({rank:0},{rank:1},'rank',1)>0);
+ assert.ok(P.compareRows({rank:0},{rank:1},'rank',-1)>0);
+});

@@ -3,6 +3,7 @@ const PurchaseUI = (() => {
   let settings = {...Purchase.defaults};
   const costs = new Map();
   let selected = null;
+  let sparkDB = null, sparkMap = new Map(), chartProduct = null;
   const money = n => n == null || !Number.isFinite(n) ? '—' : '¥' + Math.floor(n).toLocaleString('ja-JP');
   const signed = n => n == null ? '—' : (n < 0 ? '−' : '+') + money(Math.abs(Math.floor(n)));
   const pct = n => n == null ? '—' : (n > 0 ? '+' : '') + n.toFixed(1) + '%';
@@ -18,7 +19,7 @@ const PurchaseUI = (() => {
     document.querySelector('.badge-live').textContent = '成約データ';
     const main = document.getElementById('mainView');
     main.insertAdjacentHTML('afterbegin', `
-      <section class="purchase-intro"><div><span class="purchase-eyebrow">MARKET / PSA10</span><h2>仕入のチャンスを探す。</h2><p>商品を選び、仕入価格から利益をチェック。</p></div><button class="purchase-secondary" id="openSettings">仕入条件を設定 <span aria-hidden="true">↗</span></button></section>
+      <section class="purchase-intro"><div><span class="purchase-eyebrow">MARKET / PSA10</span><h2>仕入のチャンスを探す。</h2><p>商品を選び、仕入価格から利益をチェック。</p></div><div class="intro-actions"><button class="purchase-secondary" id="openMarketChart">価格グラフ</button><button class="purchase-secondary" id="openSettings">仕入条件を設定 <span aria-hidden="true">↗</span></button></div></section>
       <div class="purchase-summary" id="purchaseSummary"></div>
       <dialog class="purchase-settings" id="purchaseSettings" aria-labelledby="settingsTitle"><div class="drawer-heading"><div><span class="purchase-eyebrow">PREFERENCES</span><h2 id="settingsTitle">仕入条件</h2></div><button class="purchase-secondary" id="closeSettings" aria-label="仕入条件を閉じる">閉じる</button></div>
         <form id="purchaseSettingsForm">
@@ -34,7 +35,19 @@ const PurchaseUI = (() => {
       <dialog class="purchase-detail" id="purchaseDetail" aria-label="仕入利益の計算"></dialog>
       <details class="purchase-data-disclosure"><summary id="purchaseDataSummary">データについて</summary><p class="purchase-data-info" id="purchaseDataInfo"></p></details>`);
     const chart = document.getElementById('chartPanel');
-    main.append(chart);
+    const chartDialog = document.createElement('dialog');
+    chartDialog.id = 'marketChartDialog'; chartDialog.className = 'market-chart-dialog';
+    chartDialog.setAttribute('aria-label','カードの価格グラフ');
+    chartDialog.innerHTML = '<div class="drawer-heading"><h2>価格グラフ</h2><button class="purchase-secondary" id="closeMarketChart">グラフを閉じる</button></div>';
+    chartDialog.append(chart); main.append(chartDialog);
+    document.getElementById('rangeChips').after(document.getElementById('signalRow'), chart.querySelector('.chart-wrap'), document.getElementById('chartLegend'));
+    document.getElementById('openMarketChart').onclick = () => showChart(document.getElementById('cardSelect').value);
+    document.getElementById('closeMarketChart').onclick = () => chartDialog.close();
+    chartDialog.addEventListener('click', e => { if(e.target===chartDialog && outside(e,chartDialog)) chartDialog.close(); });
+    chartDialog.addEventListener('close', () => {
+      const trigger = [...document.querySelectorAll('[data-graph-id]')].find(el=>el.dataset.graphId===chartProduct);
+      (trigger || document.getElementById('openMarketChart')).focus({preventScroll:true});
+    });
     main.append(document.querySelector('.purchase-data-disclosure'));
     const settingsDialog = document.getElementById('purchaseSettings');
     document.getElementById('openSettings').onclick = () => settingsDialog.showModal();
@@ -78,11 +91,20 @@ const PurchaseUI = (() => {
     document.getElementById('setFilter').setAttribute('aria-label','キャラクターで絞り込み');
     document.getElementById('cardSelect').setAttribute('aria-label','チャートの商品');
     document.getElementById('mobileSortSelect').setAttribute('aria-label','一覧の並び順');
-    document.getElementById('mobileSortSelect').innerHTML = '<option value="roi7">試算利益率</option><option value="purchaseLimit">仕入上限</option><option value="cnt7">7日取得件数</option><option value="med7">7日中央値</option><option value="dod">当日／前日平均比</option><option value="wow">週比</option><option value="rank">ランク</option>';
+    document.getElementById('mobileSortSelect').innerHTML = '<option value="roi7">利益率</option><option value="profitAmount">利益額</option><option value="purchaseLimit">仕入上限</option><option value="med7">7日中央値</option><option value="mn7">7日安値</option><option value="mx7">7日高値</option><option value="cnt7">7日取引件数</option><option value="trendScore">相場トレンド</option><option value="dod">当日／前日平均比</option><option value="wow">週比</option><option value="lastTradeAt">最終取引日時</option><option value="rank">ランク</option><option value="card_name">カード名</option>';
     const table = document.getElementById('tableBody').closest('table');
     table.classList.add('purchase-table');
-    table.querySelector('thead').innerHTML = '<tr><th style="text-align:left">商品 / 詳細</th><th>仕入上限</th><th>利益額 / 利益率</th><th>7日中央値</th><th>7日取得件数</th><th>仕入判断 / 信頼度</th><th>相場トレンド</th></tr>';
-    table.addEventListener('click', e => { const b = e.target.closest('[data-purchase-id]'); if (b) open(b.dataset.purchaseId); });
+    const heading = (key,label) => `<th data-sort-key="${key}" aria-sort="none"><button data-sort="${key}">${label} <span aria-hidden="true" class="sort-arrow">↕</span></button></th>`;
+    table.querySelector('thead').innerHTML = `<tr>${heading('card_name','商品 / 詳細')}${heading('purchaseLimit','仕入上限')}${heading('profitAmount','利益額 / 利益率')}${heading('med7','7日中央値')}<th>30日価格推移</th>${heading('cnt7','7日取得件数')}<th>仕入判断 / 信頼度</th>${heading('trendScore','相場トレンド')}</tr>`;
+    table.addEventListener('click', e => {
+      const sort = e.target.closest('[data-sort]'); if(sort) { setSort(sort.dataset.sort); return; }
+      const graph = e.target.closest('[data-graph-id]'); if(graph) { showChart(graph.dataset.graphId); return; }
+      const b = e.target.closest('[data-purchase-id]'); if(b) open(b.dataset.purchaseId);
+    });
+    const bar = document.getElementById('mobileSortBar');
+    bar.querySelector('label').textContent='並び替え';
+    bar.querySelector('label').htmlFor='mobileSortSelect';
+    bar.insertAdjacentHTML('beforeend','<span class="sort-hint">PCは表の見出しからも変更できます</span>');
     document.getElementById('emptyState').textContent = '該当商品がありません。検索・レアリティ・参考候補の条件を変更してください。';
   }
   function valid(s) {
@@ -90,12 +112,22 @@ const PurchaseUI = (() => {
   }
   function assessment(r) { return Purchase.assess(r, settings, costs.get(String(r.apparel_id))); }
   function enrich() {
+    if (sparkDB !== db) {
+      const tableName = typeof TABLE !== 'undefined' ? TABLE : 'ranking_transactions';
+      sparkMap = new Map();
+      q(`SELECT apparel_id, DATE(transaction_date) day, AVG(price) price FROM ${tableName}
+        WHERE grade='PSA10' AND price>0 AND julianday(transaction_date) >= julianday(?, '-720 hours')
+        AND julianday(transaction_date) <= julianday(?) GROUP BY apparel_id,DATE(transaction_date) ORDER BY day`, [aggregationNow, aggregationNow]).forEach(r=>{
+          const id=String(r.apparel_id); if(!sparkMap.has(id)) sparkMap.set(id,[]); sparkMap.get(id).push(r);
+        });
+      sparkDB = db;
+    }
     const identities = new Map();
     tableData.forEach(r => {
       const key = [r.card_name, r.rarity, r.collection_no, r.set_name].join('|');
       const ids = identities.get(key) || new Set(); ids.add(String(r.apparel_id)); identities.set(key, ids);
     });
-    tableData.forEach(r => { r.identityUncertain = identities.get([r.card_name,r.rarity,r.collection_no,r.set_name].join('|')).size > 1; const a = assessment(r); r.roi7 = a.hasCost ? a.roi : a.reference.roi; r.purchaseLimit = a.limit; });
+    tableData.forEach(r => { r.identityUncertain = identities.get([r.card_name,r.rarity,r.collection_no,r.set_name].join('|')).size > 1; const a = assessment(r); r.roi7 = a.hasCost ? a.roi : a.reference.roi; r.purchaseLimit = a.limit; r.profitAmount = a.hasCost ? a.profit : a.reference.profit; r.lastTradeAt = Number.isFinite(Purchase.timestamp(r.last_tx)) ? Purchase.timestamp(r.last_tx) : null; });
   }
   function refresh() { enrich(); renderTableBody(); }
   function summary() {
@@ -111,7 +143,7 @@ const PurchaseUI = (() => {
   function product(r) {
     const img = typeof cardImages !== 'undefined' ? cardImages[String(r.apparel_id)] : null;
     const src = img?.img && (/^https:\/\//.test(img.img) || /^data\/thumbs\/[\w.-]+$/.test(img.img)) ? img.img : null;
-    return `<div class="purchase-product">${src ? `<img class="purchase-thumb" src="${esc(src)}" alt="" loading="lazy">` : '<span class="purchase-thumb-placeholder" aria-hidden="true">PSA<strong>10</strong></span>'}<div><button class="purchase-title-button" data-purchase-id="${esc(r.apparel_id)}">${esc(title(r))}</button><div class="purchase-small">${esc(r.set_name || '')}${r.identityUncertain ? '<br>同名・同型番あり：仕様確認が必要' : ''}</div><button class="purchase-secondary" data-purchase-id="${esc(r.apparel_id)}">利益を計算 <span aria-hidden="true">↗</span></button></div></div>`;
+    return `<div class="purchase-product">${src ? `<img class="purchase-thumb" src="${esc(src)}" alt="" loading="lazy">` : '<span class="purchase-thumb-placeholder" aria-hidden="true">PSA<strong>10</strong></span>'}<div><button class="purchase-title-button" data-purchase-id="${esc(r.apparel_id)}">${esc(title(r))}</button><div class="purchase-small">${esc(r.set_name || '')}${r.identityUncertain ? '<br>同名・同型番あり：仕様確認が必要' : ''}</div><div class="card-actions"><button class="purchase-secondary" data-purchase-id="${esc(r.apparel_id)}">利益を計算</button><button class="purchase-secondary" data-graph-id="${esc(r.apparel_id)}">グラフ</button><a class="card-market-link" href="${esc(safeURL(r.url))}" target="_blank" rel="noopener noreferrer" aria-label="${esc(title(r))}をスニダンで見る（新しいタブ）">スニダン ↗</a></div></div></div>`;
   }
   function rows(sorted, mobile) {
     return sorted.map(r => {
@@ -123,8 +155,8 @@ const PurchaseUI = (() => {
       const value = `<div class="purchase-value">${a.limit === 0 ? '条件を満たす価格なし' : money(a.limit)}</div><div class="purchase-small">商品代金の上限</div>`;
       const profit = `<div style="color:${ref.profit === null ? 'var(--text3)' : ref.profit >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${signed(ref.profit)} / ${pct(ref.roi)}</div><div class="purchase-small">${basis}</div>`;
       const status = `${badge(a)}<div class="purchase-small">${confidence}</div>`;
-      if (mobile) return `<tr class="card-row ${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td class="purchase-cards"><div class="purchase-card-top">${product(r)}${badge(a)}</div><div class="purchase-card-values"><div><span>仕入上限</span>${value}</div><div><span>${a.hasCost ? '入力価格での利益' : '過去安値での参考利益'}</span>${profit}</div></div><div class="purchase-card-foot"><span class="purchase-small">7日中央値 ${money(r.med7)} ／ ${r.cnt7}件<br>相場：${trend} ／ ${confidence}<br>最終成約 ${esc(last)}</span></div></td></tr>`;
-      return `<tr class="${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td>${product(r)}</td><td>${value}</td><td>${profit}</td><td>${money(r.med7)}<div class="purchase-small">安値 ${money(r.mn7)}</div></td><td>${r.cnt7}件<div class="purchase-small">最終 ${esc(last)}</div></td><td>${status}</td><td>${trend}</td></tr>`;
+      if (mobile) return `<tr class="card-row ${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td class="purchase-cards"><div class="purchase-card-top">${product(r)}${badge(a)}</div><div class="purchase-card-values"><div><span>仕入上限</span>${value}</div><div><span>${a.hasCost ? '入力価格での利益' : '過去安値での参考利益'}</span>${profit}</div></div><div class="purchase-card-foot"><span class="purchase-small">7日中央値 ${money(r.med7)} ／ ${r.cnt7}件<br>相場：${trend} ／ ${confidence}<br>最終成約 ${esc(last)}</span><div class="mobile-spark">${sparkline(r)}<span>30日・日別平均</span></div></div></td></tr>`;
+      return `<tr class="${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td>${product(r)}</td><td>${value}</td><td>${profit}</td><td>${money(r.med7)}<div class="purchase-small">安値 ${money(r.mn7)}</div></td><td>${sparkline(r)}</td><td>${r.cnt7}件<div class="purchase-small">最終 ${esc(last)}</div></td><td>${status}</td><td>${trend}</td></tr>`;
     }).join('');
   }
   function open(id, scroll=true) {
@@ -146,22 +178,43 @@ const PurchaseUI = (() => {
       updateResult(r, invalid); refresh();
     });
     document.getElementById('closePurchase').onclick = close;
-    document.getElementById('purchaseChart').onclick = () => {
-      close();
-      populateSelect(allOptions);
-      document.getElementById('chartSearchInput').value = '';
-      document.getElementById('cardSelect').value = String(r.apparel_id);
-      activeApId = String(r.apparel_id); chartPanelOpen = true;
-      document.getElementById('chartPanelBody').classList.remove('chart-collapsed');
-      document.getElementById('chartToggleBtn').textContent = '▲ 閉じる'; renderChart();
-      document.getElementById('chartPanel').scrollIntoView({behavior:'smooth', block:'start'});
-    };
+    document.getElementById('purchaseChart').onclick = () => showChart(r.apparel_id);
     updateResult(r);
     renderTableBody();
     if (!wasOpen) { isMobile() ? detail.showModal() : detail.show(); document.body.classList.add('detail-open'); }
     if (scroll) document.getElementById('closePurchase').focus({preventScroll:true});
     window.scrollTo({top:pageScroll,behavior:'instant'});
     requestAnimationFrame(() => window.scrollTo({top:pageScroll,behavior:'instant'}));
+  }
+  function showChart(id) {
+    const y = window.scrollY;
+    if (document.getElementById('purchaseDetail').open) close();
+    chartProduct = String(id || allOptions[0]?.value || '');
+    populateSelect(allOptions); document.getElementById('chartSearchInput').value='';
+    document.getElementById('cardSelect').value=chartProduct;
+    activeApId=chartProduct; chartPanelOpen=true;
+    document.getElementById('chartPanelBody').classList.remove('chart-collapsed');
+    const dialog = document.getElementById('marketChartDialog');
+    if (!dialog.open) dialog.showModal();
+    renderChart(); document.getElementById('closeMarketChart').focus({preventScroll:true});
+    window.scrollTo({top:y,behavior:'instant'});
+    requestAnimationFrame(()=>window.scrollTo({top:y,behavior:'instant'}));
+  }
+  function sparkline(r) {
+    const series=sparkMap.get(String(r.apparel_id)) || [];
+    if(series.length<2) return '<span class="purchase-small">推移データ不足</span>';
+    const prices=series.map(p=>p.price), min=Math.min(...prices), max=Math.max(...prices);
+    const start=Purchase.timestamp(series[0].day), end=Purchase.timestamp(series.at(-1).day);
+    const points=series.map(p=>`${4+((Purchase.timestamp(p.day)-start)/(end-start || 1))*102},${max===min?20:36-(p.price-min)/(max-min)*30}`).join(' ');
+    const color=prices.at(-1)>=prices[0]?'var(--green)':'var(--red)';
+    return `<button class="sparkline-button" data-graph-id="${esc(r.apparel_id)}" aria-label="${esc(title(r))}の価格グラフ"><svg viewBox="0 0 110 42" role="img" aria-label="直近30日の日別平均成約価格。詳細グラフを開く"><path d="M4 38H106" stroke="var(--border2)"/><polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+  }
+  function syncSort() {
+    document.querySelectorAll('th[data-sort-key]').forEach(th=>{
+      const active=th.dataset.sortKey===sortCol;
+      th.setAttribute('aria-sort',active?(sortDir===1?'ascending':'descending'):'none');
+      th.querySelector('.sort-arrow').textContent=active?(sortDir===1?'↑':'↓'):'↕';
+    });
   }
   function outside(event, dialog) {
     const rect = dialog.getBoundingClientRect();
@@ -187,5 +240,5 @@ const PurchaseUI = (() => {
       <p class="purchase-small">売却手取 ${money(a.net)} ／ 仕入時費用 ${money(settings.buyFees)} ／ 最低利益 ${money(settings.targetProfit)}・${settings.targetRoi}％ ／ 取得 ${r.cnt7}件・信頼度 ${a.confidence}</p>
       <div style="overflow-x:auto"><table class="purchase-scenarios"><thead><tr><th>販売シナリオ</th><th>販売価格</th><th>利益額</th><th>利益率</th></tr></thead><tbody>${scenarios}</tbody></table></div><p class="purchase-note">中央値は販売価格の仮定です。未入力時は利益を表示しません。データ不足時の仕入上限は参考値です。入力した商品代金はページを再読み込みするまでのみ保持します。</p>`;
   }
-  return {init, enrich, summary, assessment, rows, sync: () => { if (selected) open(selected, false); }};
+  return {init, enrich, summary, assessment, rows, syncSort, sync: () => { if (selected) open(selected, false); }};
 })();
