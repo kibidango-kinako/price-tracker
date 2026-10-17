@@ -40,7 +40,17 @@
       if (!hasCost) reasons.push('過去安値での試算。実際の仕入価格を入力してください');
     }
     const confidence = row.identityUncertain ? '低' : row.cnt7 >= 20 && age <= 1 ? '高' : row.cnt7 >= s.minTrades && age <= s.maxAge ? '中' : '低';
-    return {...calc, reference:ref, age, eligible, label, reasons, confidence, hasCost};
+    const trendOrder = label === 'データ不足' || !(row.trendScore > 0) ? null : row.trendScore;
+    const recommendationScore = label === 'データ不足' || trendOrder === null || basis.profit === null ? null
+      : !withinBudget || basis.profit <= 0 ? 1
+      : !trendOK ? 2 : !profitable ? 3
+      : hasCost && confidence === '高' && trendOrder >= 4 ? 5 : 4;
+    const recommendationReason = recommendationScore === null ? (label === 'データ不足' ? reasons[0] : 'トレンド不明')
+      : !withinBudget ? '予算超過' : basis.profit <= 0 ? '費用を差し引くと利益が出ません'
+      : !trendOK ? '利益は見込めますが相場は下落傾向'
+      : !profitable ? '利益はプラス・目標利益に未達'
+      : recommendationScore === 5 ? '目標達成・上昇傾向・件数と鮮度が良好' : '目標達成・中立以上の相場';
+    return {...calc, reference:ref, age, eligible, label, reasons, confidence, hasCost, trendOrder, recommendationScore, recommendationReason};
   }
   // Missing values always follow valid values, regardless of sort direction.
   function compareRows(a,b,key,direction=-1) {
