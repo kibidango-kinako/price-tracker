@@ -58,3 +58,28 @@ test('unknown rank zero follows ranked cards',()=>{
  assert.ok(P.compareRows({rank:0},{rank:1},'rank',1)>0);
  assert.ok(P.compareRows({rank:0},{rank:1},'rank',-1)>0);
 });
+test('displayed trends sort in market order, with withheld trends last in both directions',()=>{
+ const rows=[5,1,3,4,2,0].map(trendScore=>P.assess({...row,trendScore},{},20000,now));
+ rows.push(P.assess({...row,cnt7:1},{},20000,now));
+ for(const dir of [1,-1]) {
+  const values=[...rows].sort((a,b)=>P.compareRows(a,b,'trendOrder',dir)).map(a=>a.trendOrder);
+  assert.deepEqual(values,dir===1?[1,2,3,4,5,null,null]:[5,4,3,2,1,null,null]);
+ }
+});
+test('recommendations distinguish real cost, targets, falling markets, losses and budget',()=>{
+ const score=(patch={},settings={},cost=20000)=>P.assess({...row,...patch},settings,cost,now).recommendationScore;
+ assert.equal(score(),5);
+ assert.equal(score({}, {}, null),4);
+ assert.equal(score({trendScore:3}),4);
+ assert.equal(score({}, {}, 25000),3);
+ assert.equal(score({trendScore:1}),2);
+ assert.equal(score({}, {}, 30000),1);
+ assert.equal(score({}, {budget:19000}),1);
+ assert.equal(score({last_tx:'2026-10-14 07:00'}),4);
+ for(const patch of [{cnt7:1},{identityUncertain:true},{last_tx:null},{trendScore:0},{med7:null}]) assert.equal(score(patch),null);
+});
+test('recommendations recalculate with settings and stay sortable with pending ratings last',()=>{
+ const a=P.assess(row,{},20000,now), b=P.assess(row,{targetProfit:10000},20000,now);
+ assert.equal(a.recommendationScore,5);assert.equal(b.recommendationScore,3);
+ for(const dir of [1,-1]) assert.ok(P.compareRows({recommendationScore:null},b,'recommendationScore',dir)>0);
+});
