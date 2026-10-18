@@ -1666,5 +1666,49 @@
  "93189": {
   "img": "data/thumbs/93189.jpg",
   "cardID": "6045"
+ },
+ "138479": {
+  "img": "data/thumbs/138479.jpg",
+  "cardID": "37033"
+ },
+ "309408": {
+  "img": "data/thumbs/309408.jpg",
+  "source": "snkrdunk"
+ },
+ "450623": {
+  "img": "data/thumbs/450623.jpg",
+  "source": "snkrdunk"
+ },
+ "450631": {
+  "img": "data/thumbs/450631.jpg",
+  "source": "snkrdunk"
+ },
+ "568904": {
+  "img": "data/thumbs/568904.jpg",
+  "cardID": "47534"
+ },
+ "898625": {
+  "img": "data/thumbs/898625.jpg",
+  "source": "snkrdunk"
+ },
+ "92134": {
+  "img": "data/thumbs/92134.jpg",
+  "source": "snkrdunk"
+ },
+ "92150": {
+  "img": "data/thumbs/92150.jpg",
+  "source": "snkrdunk"
+ },
+ "92154": {
+  "img": "data/thumbs/92154.jpg",
+  "source": "snkrdunk"
+ },
+ "93060": {
+  "img": "data/thumbs/93060.jpg",
+  "source": "snkrdunk"
+ },
+ "93076": {
+  "img": "data/thumbs/93076.jpg",
+  "source": "snkrdunk"
  }
 }
