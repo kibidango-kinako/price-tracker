@@ -1758,5 +1758,25 @@
  "93136": {
   "img": "data/thumbs/93136.jpg",
   "source": "snkrdunk"
+ },
+ "107388": {
+  "img": "data/thumbs/107388.jpg",
+  "cardID": "31099"
+ },
+ "886017": {
+  "img": "data/thumbs/886017.jpg",
+  "cardID": "50719"
+ },
+ "886018": {
+  "img": "data/thumbs/886018.jpg",
+  "source": "snkrdunk"
+ },
+ "896990": {
+  "img": "data/thumbs/896990.jpg",
+  "source": "snkrdunk"
+ },
+ "91385": {
+  "img": "data/thumbs/91385.jpg",
+  "cardID": "32349"
  }
 }
