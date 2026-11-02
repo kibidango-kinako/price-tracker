@@ -9,6 +9,8 @@ const PurchaseUI = (() => {
   const pct = n => n == null ? '—' : (n > 0 ? '+' : '') + n.toFixed(1) + '%';
   const safeURL = value => { try { const u = new URL(value); return u.protocol === 'https:' && u.hostname === 'snkrdunk.com' ? u.href : '#'; } catch { return '#'; } };
   const title = r => [r.card_name, r.rarity, r.collection_no ? '[' + r.collection_no + ']' : ''].filter(Boolean).join(' ');
+  const searchWord = r => [r.card_name, String(r.collection_no || '').split(' ').pop(), 'PSA10'].filter(v => v && v !== 'nan').join(' ');
+  const marketLinks = r => Purchase.marketSearches(searchWord(r)).map(m => `<a class="card-market-link" href="${esc(m.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(title(r))}を${m.label}で探す（新しいタブ）">${m.label} ↗</a>`).join('');
   const badge = a => `<span class="purchase-badge ${a.eligible ? 'good' : a.label === 'データ不足' ? 'warn' : ''}">${a.label}</span>`;
   const recommendation = a => `<div class="purchase-recommendation ${a.recommendationScore >= 4 ? 'is-high' : ''}"><strong>仕入おすすめ度 ${a.recommendationScore === null ? '判定保留' : '★ ' + a.recommendationScore + '/5'}</strong><span class="purchase-small">${a.hasCost ? '入力価格で評価' : '参考評価・過去安値で試算'}</span><span class="purchase-small">${esc(a.recommendationReason)}</span></div>`;
   const input = (key, label, min, max, step=1) => `<label>${label}<input name="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${settings[key]}" required></label>`;
@@ -144,7 +146,7 @@ const PurchaseUI = (() => {
   function product(r) {
     const img = typeof cardImages !== 'undefined' ? cardImages[String(r.apparel_id)] : null;
     const src = img?.img && (/^https:\/\//.test(img.img) || /^data\/thumbs\/[\w.-]+$/.test(img.img)) ? img.img : null;
-    return `<div class="purchase-product">${src ? `<img class="purchase-thumb" src="${esc(src)}" alt="" loading="lazy">` : '<span class="purchase-thumb-placeholder" aria-hidden="true">PSA<strong>10</strong></span>'}<div><button class="purchase-title-button" data-purchase-id="${esc(r.apparel_id)}">${esc(title(r))}</button><div class="purchase-small">${esc(r.set_name || '')}${r.identityUncertain ? '<br>同名・同型番あり：仕様確認が必要' : ''}</div><div class="card-actions"><button class="purchase-secondary" data-purchase-id="${esc(r.apparel_id)}">利益を計算</button><button class="purchase-secondary" data-graph-id="${esc(r.apparel_id)}">グラフ</button><a class="card-market-link" href="${esc(safeURL(r.url))}" target="_blank" rel="noopener noreferrer" aria-label="${esc(title(r))}をスニダンで見る（新しいタブ）">スニダン ↗</a></div></div></div>`;
+    return `<div class="purchase-product">${src ? `<img class="purchase-thumb" src="${esc(src)}" alt="" loading="lazy">` : '<span class="purchase-thumb-placeholder" aria-hidden="true">PSA<strong>10</strong></span>'}<div><button class="purchase-title-button" data-purchase-id="${esc(r.apparel_id)}">${esc(title(r))}</button><div class="purchase-small">${esc(r.set_name || '')}${r.identityUncertain ? '<br>同名・同型番あり：仕様確認が必要' : ''}</div><div class="card-actions"><button class="purchase-secondary" data-purchase-id="${esc(r.apparel_id)}">利益を計算</button><button class="purchase-secondary" data-graph-id="${esc(r.apparel_id)}">グラフ</button><a class="card-market-link" href="${esc(safeURL(r.url))}" target="_blank" rel="noopener noreferrer" aria-label="${esc(title(r))}をスニダンで見る（新しいタブ）">スニダン ↗</a>${marketLinks(r)}</div></div></div>`;
   }
   function rows(sorted, mobile) {
     return sorted.map(r => {

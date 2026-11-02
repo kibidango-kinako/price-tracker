@@ -62,7 +62,17 @@
     return direction * (typeof x==='string' || typeof y==='string'
       ? String(x).localeCompare(String(y),'ja',{numeric:true}) : x-y);
   }
-  const api = {defaults, timestamp, calculate, assess, compareRows};
+  // Search pages on other marketplaces; the keyword is the only thing sent.
+  const markets = [
+    ['メルカリ', 'https://jp.mercari.com/search?status=on_sale&keyword='],
+    ['Yahoo!フリマ', 'https://paypayfleamarket.yahoo.co.jp/search/'],
+    ['ヤフオク', 'https://auctions.yahoo.co.jp/search/search?p=']
+  ];
+  function marketSearches(keyword) {
+    const q = String(keyword || '').replace(/[「」『』]/g, ' ').replace(/\s+/g, ' ').trim();
+    return q ? markets.map(([label, base]) => ({label, url: base + encodeURIComponent(q)})) : [];
+  }
+  const api = {defaults, timestamp, calculate, assess, compareRows, marketSearches};
   if (typeof module !== 'undefined') module.exports = api;
   else root.Purchase = api;
 })(typeof window !== 'undefined' ? window : globalThis);

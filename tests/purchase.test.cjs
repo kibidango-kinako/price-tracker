@@ -83,3 +83,9 @@ test('recommendations recalculate with settings and stay sortable with pending r
  assert.equal(a.recommendationScore,5);assert.equal(b.recommendationScore,3);
  for(const dir of [1,-1]) assert.ok(P.compareRows({recommendationScore:null},b,'recommendationScore',dir)>0);
 });
+test('market search links encode the keyword and drop bracket marks', () => {
+ const links = P.marketSearches('構築デッキ「メガゲンガー 230/193」');
+ assert.deepEqual(links.map(m => m.label), ['メルカリ','Yahoo!フリマ','ヤフオク']);
+ for (const m of links) assert.ok(m.url.endsWith(encodeURIComponent('構築デッキ メガゲンガー 230/193')));
+ assert.deepEqual(P.marketSearches('  '), []);
+});
