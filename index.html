@@ -217,6 +217,7 @@
   }
 </style>
 <link rel="stylesheet" href="assets/purchase.css?v=20261017">
+<link rel="stylesheet" href="assets/market.css?v=20261113">
 </head>
 <body>
 
@@ -341,7 +342,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="assets/purchase.js?v=20261103"></script>
-<script src="assets/purchase-ui.js?v=20261103"></script>
+<script src="assets/market.js?v=20261113"></script>
+<script src="assets/market-ui.js?v=20261113"></script>
+<script src="assets/purchase-ui.js?v=20261113"></script>
 <script>
 // ===== GLOBALS =====
 // DBは同一オリジン(GitHub Pages)から取得する。
@@ -654,7 +657,7 @@ const POKEMON_NAME_MAP = {
 let db = null, chartInst = null, activeApId = null;
 let tableData = [], allOptions = [], cardImages = {};
 let aggregationNow = '';
-let sortCol = 'roi7', sortDir = -1;
+let sortCol = 'priorityScore', sortDir = -1;
 let filterRarity = 'all', filterText = '', filterSet = 'all', filterProfit = false;
 let showPriceLabels = false;
 let chartRangeHours = 168; // チャート表示期間（null = 全期間）
@@ -861,9 +864,12 @@ function buildTrendMap() {
   return result;
 }
 
-// 直近7日 / その前7日の価格リストをカード別に作る（基準は閲覧時点の日本時間）
+// 直近7日 / その前7日の価格リストをカード別に作る
 function buildWeekMap() {
-  const maxD = aggregationNow = japanNow();
+  // 基準はデータ内の最新成約時刻。収集は1日1回なので、閲覧時刻を基準にすると直近7日が最大1日ぶん短くなる。
+  // データが古い場合は、最終取引の鮮度判定（閲覧時刻との差）と概況の警告で分かるようにしている
+  const latest = q(`SELECT MAX(transaction_date) d FROM ranking_transactions WHERE julianday(transaction_date) <= julianday(?)`, [japanNow()])[0]?.d;
+  const maxD = aggregationNow = latest || japanNow();
   const rows = q(`SELECT apparel_id, price,
     CASE WHEN julianday(transaction_date) >= julianday(?, '-168 hours') THEN 0 ELSE 1 END wk
     FROM ranking_transactions WHERE julianday(transaction_date) >= julianday(?, '-336 hours')
@@ -933,7 +939,7 @@ function getFilteredSorted() {
     }
     if (filterRarity !== 'all' && r.rarity !== filterRarity) return false;
     if (filterSet !== 'all' && !getPokemonNames(r).includes(filterSet)) return false;
-    if (filterProfit && !PurchaseUI.assessment(r).eligible) return false;
+    if (filterProfit && !PurchaseUI.isCandidate(r)) return false;
 
     return true;
   });
@@ -1015,7 +1021,7 @@ function toggleMobileSortDir() {
 function toggleProfitFilter() {
   filterProfit = !filterProfit;
   document.getElementById('profitChip').classList.toggle('active', filterProfit);
-  if (filterProfit) { sortCol = 'roi7'; sortDir = -1; updateSortUI(); } // ONにしたら利益率順に並べ替え
+  if (filterProfit) { sortCol = 'priorityScore'; sortDir = -1; updateSortUI(); } // ONにしたら探す優先度順に並べ替え
   renderTableBody();
 }
 
