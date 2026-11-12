@@ -87,18 +87,18 @@ const PurchaseUI = (() => {
       form.requestSubmit();
     });
     const chip = document.getElementById('profitChip');
-    chip.textContent = '参考候補'; chip.title = '入力済み仕入価格、未入力なら過去7日安値で、設定した利益・件数・鮮度・予算と中立以上のトレンドを満たす商品';
+    chip.textContent = '仕入候補'; chip.title = '探す優先度が「優先して探す」「候補」で、仕入上限が予算内の商品。仕入価格を入力して条件達成になった商品も含みます';
     document.getElementById('tableSearch').setAttribute('aria-label','カード名・型番・収録弾を検索');
     document.getElementById('tableSearch').placeholder = 'カード名・型番・収録弾で検索';
     document.getElementById('chartSearchInput').setAttribute('aria-label','チャートの商品検索');
     document.getElementById('setFilter').setAttribute('aria-label','キャラクターで絞り込み');
     document.getElementById('cardSelect').setAttribute('aria-label','チャートの商品');
     document.getElementById('mobileSortSelect').setAttribute('aria-label','一覧の並び順');
-    document.getElementById('mobileSortSelect').innerHTML = '<option value="recommendationScore">仕入おすすめ度</option><option value="roi7">利益率</option><option value="profitAmount">利益額</option><option value="purchaseLimit">仕入上限</option><option value="med7">7日中央値</option><option value="mn7">7日安値</option><option value="mx7">7日高値</option><option value="cnt7">7日取引件数</option><option value="trendOrder">相場トレンド</option><option value="dod">当日／前日平均比</option><option value="wow">週比</option><option value="lastTradeAt">最終取引日時</option><option value="rank">ランク</option><option value="card_name">カード名</option>';
+    document.getElementById('mobileSortSelect').innerHTML = '<option value="priorityScore">探す優先度</option><option value="chg">期間の変動</option><option value="volume">期間の成約額</option><option value="recommendationScore">仕入おすすめ度</option><option value="roi7">利益率</option><option value="profitAmount">利益額</option><option value="purchaseLimit">仕入上限</option><option value="med7">7日中央値</option><option value="mn7">7日安値</option><option value="mx7">7日高値</option><option value="cnt7">7日取引件数</option><option value="trendOrder">相場トレンド</option><option value="dod">当日／前日平均比</option><option value="wow">週比</option><option value="lastTradeAt">最終取引日時</option><option value="rank">ランク</option><option value="card_name">カード名</option>';
     const table = document.getElementById('tableBody').closest('table');
     table.classList.add('purchase-table');
     const heading = (key,label) => `<th data-sort-key="${key}" aria-sort="none"><button data-sort="${key}">${label} <span aria-hidden="true" class="sort-arrow">↕</span></button></th>`;
-    table.querySelector('thead').innerHTML = `<tr>${heading('card_name','商品 / 詳細')}${heading('purchaseLimit','仕入上限')}${heading('profitAmount','利益額 / 利益率')}${heading('med7','7日中央値')}<th>30日価格推移</th>${heading('cnt7','7日取得件数')}${heading('recommendationScore','仕入おすすめ度')}${heading('trendOrder','相場トレンド')}</tr>`;
+    table.querySelector('thead').innerHTML = `<tr>${heading('card_name','商品 / 詳細')}${heading('med7','7日中央値')}${heading('chg','<span data-period-label></span>変動')}<th>30日価格推移</th>${heading('volume','<span data-period-label></span>成約額')}${heading('purchaseLimit','仕入上限')}${heading('priorityScore','探す優先度')}${heading('trendOrder','相場トレンド')}</tr>`;
     table.addEventListener('click', e => {
       const sort = e.target.closest('[data-sort]'); if(sort) { setSort(sort.dataset.sort); return; }
       const graph = e.target.closest('[data-graph-id]'); if(graph) { showChart(graph.dataset.graphId); return; }
@@ -108,7 +108,8 @@ const PurchaseUI = (() => {
     bar.querySelector('label').textContent='並び替え';
     bar.querySelector('label').htmlFor='mobileSortSelect';
     bar.insertAdjacentHTML('beforeend','<span class="sort-hint">トレンド降順＝強い上昇から／昇順＝強い下落から。判定保留は末尾</span>');
-    document.getElementById('emptyState').textContent = '該当商品がありません。検索・レアリティ・参考候補の条件を変更してください。';
+    document.getElementById('emptyState').textContent = '該当商品がありません。検索・レアリティ・仕入候補の条件を変更してください。';
+    MarketUI.init();
   }
   function valid(s) {
     return ['snkr','mercari','custom'].includes(s.venue) && Object.entries(Purchase.defaults).every(([k]) => k === 'venue' || (typeof s[k] === 'number' && Number.isFinite(s[k]) && s[k] >= 0)) && s.fee < 100 && s.targetRoi <= 1000 && s.minTrades >= 1 && Number.isInteger(s.minTrades) && s.maxAge >= 1 && s.maxAge <= 30;
@@ -131,17 +132,22 @@ const PurchaseUI = (() => {
       const ids = identities.get(key) || new Set(); ids.add(String(r.apparel_id)); identities.set(key, ids);
     });
     tableData.forEach(r => { r.identityUncertain = identities.get([r.card_name,r.rarity,r.collection_no,r.set_name].join('|')).size > 1; const a = assessment(r); r.trendOrder = a.trendOrder; r.recommendationScore = a.recommendationScore; r.roi7 = a.hasCost ? a.roi : a.reference.roi; r.purchaseLimit = a.limit; r.profitAmount = a.hasCost ? a.profit : a.reference.profit; r.lastTradeAt = Number.isFinite(Purchase.timestamp(r.last_tx)) ? Purchase.timestamp(r.last_tx) : null; });
+    MarketUI.enrich(settings, assessment);
   }
+  // 探す優先度による候補、または入力した仕入価格で条件を満たした商品
+  function isCandidate(r) { return r.isCandidate || assessment(r).eligible; }
   function refresh() { enrich(); renderTableBody(); }
   function summary() {
-    const candidates = tableData.filter(r => assessment(r).eligible).length;
+    const candidates = tableData.filter(isCandidate).length;
     const insufficient = tableData.filter(r => assessment(r).label === 'データ不足').length;
-    document.getElementById('purchaseSummary').innerHTML = `<span>掲載商品 <strong>${tableData.length}</strong></span><span>参考候補 <strong>${candidates}</strong></span><span>データ不足 <strong>${insufficient}</strong></span><span class="summary-target">目標 <strong>${money(settings.targetProfit)} / ${settings.targetRoi}％</strong></span>`;
+    document.getElementById('purchaseSummary').innerHTML = `<span>掲載商品 <strong>${tableData.length}</strong></span><span>仕入候補 <strong>${candidates}</strong></span><span>データ不足 <strong>${insufficient}</strong></span><span class="summary-target">目標 <strong>${money(settings.targetProfit)} / ${settings.targetRoi}％</strong></span>`;
     const tableName = typeof TABLE !== 'undefined' ? TABLE : 'ranking_transactions';
     const dates = q(`SELECT MAX(collected_date) collected, MAX(transaction_date) traded FROM ${tableName}`)[0];
-    document.getElementById('purchaseDataInfo').textContent = `データ収集日：${dates?.collected || '不明'} ／ 最新成約：${dates?.traded || '不明'}（日本時間）。集計基準：${aggregationNow}。7日集計は閲覧時点を基準。取得できた成約のみを集計し、市場全体の件数・売れるまでの日数は示しません。`;
+    document.getElementById('purchaseDataInfo').textContent = `データ収集日：${dates?.collected || '不明'} ／ 最新成約：${dates?.traded || '不明'}（日本時間）。集計基準：${aggregationNow}（データ内の最新成約）。7日集計はこの時刻から遡ります。取得できた成約のみを集計し、市場全体の件数・売れるまでの日数は示しません。`;
     document.getElementById('purchaseDataSummary').textContent = `データ収集 ${dates?.collected || '不明'} · 集計条件を見る`;
     document.getElementById('profitChip').setAttribute('aria-pressed', String(filterProfit));
+    document.querySelectorAll('[data-period-label]').forEach(el => { el.textContent = MarketUI.label(); });
+    MarketUI.render();
   }
   function product(r) {
     const img = typeof cardImages !== 'undefined' ? cardImages[String(r.apparel_id)] : null;
@@ -150,16 +156,15 @@ const PurchaseUI = (() => {
   }
   function rows(sorted, mobile) {
     return sorted.map(r => {
-      const a = assessment(r), ref = a.hasCost ? a : a.reference;
-      const basis = a.hasCost ? '入力した価格で計算' : '過去安値で買った場合';
+      const a = assessment(r);
       const trend = a.trendOrder === null ? '判定保留' : TREND_LABEL_MAP[r.trend.cls] || 'データ不足';
-      const confidence = `信頼度 ${a.confidence}（件数・鮮度）`;
       const last = r.last_tx || '不明';
-      const value = `<div class="purchase-value">${a.limit === 0 ? '条件を満たす価格なし' : '<span class="purchase-money">' + money(a.limit) + '</span>'}</div><div class="purchase-small">商品代金の上限</div>`;
-      const profit = `<div style="color:${ref.profit === null ? 'var(--text3)' : ref.profit >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${signed(ref.profit)} / ${pct(ref.roi)}</div><div class="purchase-small">${basis}</div>`;
-      const status = `${recommendation(a)}${badge(a)}<div class="purchase-small">${confidence}</div>`;
-      if (mobile) return `<tr class="card-row ${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td class="purchase-cards"><div class="purchase-card-top">${product(r)}${badge(a)}</div>${recommendation(a)}<div class="purchase-card-values"><div><span>仕入上限</span>${value}</div><div><span>${a.hasCost ? '入力価格での利益' : '過去安値での参考利益'}</span>${profit}</div></div><div class="purchase-card-foot"><span class="purchase-small">7日中央値 ${money(r.med7)} ／ ${r.cnt7}件<br>相場：${trend} ／ ${confidence}<br>最終成約 ${esc(last)}</span><div class="mobile-spark">${sparkline(r)}<span>30日・日別平均</span></div></div></td></tr>`;
-      return `<tr class="${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td>${product(r)}</td><td>${value}</td><td>${profit}</td><td>${money(r.med7)}<div class="purchase-small">安値 ${money(r.mn7)}</div></td><td>${sparkline(r)}</td><td>${r.cnt7}件<div class="purchase-small">最終 ${esc(last)}</div></td><td>${status}</td><td>${trend}</td></tr>`;
+      // 利益は実際の仕入価格を入れたときだけ出す。過去安値は「いま買える価格」ではないため一覧では使わない
+      const entered = a.hasCost ? `<div class="mk-entered"><span style="color:${a.profit >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${signed(a.profit)} / ${pct(a.roi)}</span> ${badge(a)}<div class="purchase-small">入力した ${money(costs.get(String(r.apparel_id)))} で計算</div></div>` : '';
+      const value = `<div class="purchase-value">${a.limit === 0 ? '条件を満たす価格なし' : '<span class="purchase-money">' + money(a.limit) + '</span>'}</div>${entered || '<div class="purchase-small">この商品代金以下で目標達成</div>'}`;
+      const price = `${money(r.med7)}<div class="purchase-small" style="white-space:nowrap">7日 ${r.cnt7}件<br>最終 ${esc(last.slice(5))}</div>`;
+      if (mobile) return `<tr class="card-row ${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td class="purchase-cards"><div class="purchase-card-top">${product(r)}</div><div class="purchase-card-values"><div><span>仕入上限</span>${value}</div><div><span>探す優先度</span>${MarketUI.priorityCell(r)}</div></div><div class="purchase-card-foot"><span class="purchase-small">7日中央値 ${money(r.med7)} ／ ${r.cnt7}件<br>${MarketUI.label()}変動 ${MarketUI.change(r.chg)} ／ 成約額 ${MarketUI.yenShort(r.volume)}<br>相場：${trend} ／ 最終成約 ${esc(last)}</span><div class="mobile-spark">${sparkline(r)}<span>30日・日別平均</span></div></div></td></tr>`;
+      return `<tr class="${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td>${product(r)}</td><td>${price}</td><td>${MarketUI.changeCell(r)}</td><td>${sparkline(r)}</td><td>${MarketUI.volumeCell(r)}</td><td>${value}</td><td>${MarketUI.priorityCell(r)}</td><td>${trend}</td></tr>`;
     }).join('');
   }
   function open(id, scroll=true) {
@@ -169,10 +174,11 @@ const PurchaseUI = (() => {
     const detail = document.getElementById('purchaseDetail');
     const wasOpen = detail.open;
     detail.innerHTML = `<div class="drawer-heading"><span class="purchase-eyebrow">PROFIT CALCULATOR</span><button class="purchase-secondary" id="closePurchase" aria-label="商品詳細を閉じる">閉じる</button></div><h2>${esc(title(r))}</h2><p class="purchase-small">${esc(r.set_name || '')} ／ PSA10 ／ 最終成約 ${esc(r.last_tx || '不明')}</p>
+      ${MarketUI.detail(r)}
       <div class="purchase-grid"><label>実際の仕入商品代金（円）<input id="purchaseCost" type="number" min="1" max="100000000" step="1" placeholder="例：20000" value="${costs.get(selected) || ''}"></label><div class="purchase-small">販売価格の試算基準：直近7日成約中央値 ${money(r.med7)}<br>過去安値 ${money(r.mn7)} は現在買える価格ではありません。</div></div>
       <p class="purchase-error" id="costError" role="status"></p><div id="purchaseResult" aria-live="polite"></div>
       <button class="purchase-secondary" id="purchaseChart">この商品のチャートを見る</button> <a class="purchase-view-link" href="${esc(safeURL(r.url))}" target="_blank" rel="noopener noreferrer">SNKRDUNKの商品ページ ↗</a>
-      <details class="purchase-note"><summary>計算方法・判定の根拠</summary>売却手取＝販売価格×（1−手数料率）−販売送料−その他販売費。利益＝売却手取−商品代金−仕入時費用。利益率＝利益÷（商品代金＋仕入時費用）。仕入上限は最低利益額・率を両方満たす額を切り捨て。条件達成には取引件数・鮮度・予算・中立以上のトレンドも必要です。信頼度は件数と鮮度の目安で、値動きやデータの正しさを保証しません。おすすめ度は1＝利益なし・予算超過、2＝利益あり・下落、3＝利益あり・目標未達、4＝目標達成・中立以上、5＝4に加えて入力価格あり・上昇・信頼度高。データ不足・トレンド不明は判定保留。未入力時は過去安値での参考評価で最大4です。税金は含みません。</details>`;
+      <details class="purchase-note"><summary>計算方法・判定の根拠</summary>売却手取＝販売価格×（1−手数料率）−販売送料−その他販売費。利益＝売却手取−商品代金−仕入時費用。利益率＝利益÷（商品代金＋仕入時費用）。仕入上限は最低利益額・率を両方満たす額を切り捨て。条件達成には取引件数・鮮度・予算・中立以上のトレンドも必要です。信頼度は件数と鮮度の目安で、値動きやデータの正しさを保証しません。おすすめ度は1＝利益なし・予算超過、2＝利益あり・下落、3＝利益あり・目標未達、4＝目標達成・中立以上、5＝4に加えて入力価格あり・上昇・信頼度高。データ不足・トレンド不明は判定保留。未入力時は過去安値での参考評価で最大4です。税金は含みません。探す優先度は売りやすさ40・相場の向き35・価格の安定25の合計で、仕入価格を入れる前の「探す価値」の目安です。</details>`;
     document.getElementById('purchaseCost').addEventListener('input', e => {
       const el = e.target; const n = Number(el.value);
       const invalid = el.validity.badInput || (el.value !== '' && (!el.checkValidity() || !Number.isInteger(n)));
@@ -241,7 +247,7 @@ const PurchaseUI = (() => {
     }).join('');
     document.getElementById('purchaseResult').innerHTML = `${label}${invalid ? '' : recommendation(a)}<p class="purchase-note">${esc(a.reasons.join(' ／ ') || '設定した利益・件数・鮮度・予算・相場条件を満たしています。')}</p><div class="purchase-metrics"><div class="purchase-metric"><span class="purchase-small">仕入上限（商品代金）</span><strong class="purchase-value">${a.limit === 0 ? '条件を満たす価格なし' : '<span class="purchase-money">' + money(a.limit) + '</span>'}</strong></div><div class="purchase-metric"><span class="purchase-small">入力価格での利益額</span><strong class="${a.profit === null ? '' : a.profit >= 0 ? 'profit-positive' : 'profit-negative'}">${signed(a.profit)}</strong></div><div class="purchase-metric"><span class="purchase-small">入力価格での利益率</span><strong class="${a.roi === null ? '' : a.roi >= 0 ? 'profit-positive' : 'profit-negative'}">${pct(a.roi)}</strong></div></div>
       <p class="purchase-small">売却手取 ${money(a.net)} ／ 仕入時費用 ${money(settings.buyFees)} ／ 最低利益 ${money(settings.targetProfit)}・${settings.targetRoi}％ ／ 取得 ${r.cnt7}件・信頼度 ${a.confidence}</p>
-      <div style="overflow-x:auto"><table class="purchase-scenarios"><thead><tr><th>販売シナリオ</th><th>販売価格</th><th>利益額</th><th>利益率</th></tr></thead><tbody>${scenarios}</tbody></table></div><p class="purchase-note">中央値は販売価格の仮定です。未入力時は利益を表示しません。データ不足時の仕入上限は参考値です。入力した商品代金はページを再読み込みするまでのみ保持します。</p>`;
+      <div style="overflow-x:auto"><table class="purchase-scenarios"><thead><tr><th>販売シナリオ</th><th>販売価格</th><th>利益額</th><th>利益率</th></tr></thead><tbody>${scenarios}</tbody></table></div><p class="purchase-note">中央値は販売価格の仮定です。未入力時は利益を表示しません。データ不足時の仕入上限は参考値です。入力した商品代金はページを再読み込みするまでのみ保持します。</p>${invalid ? '' : MarketUI.position(r, cost)}`;
   }
-  return {init, enrich, summary, assessment, rows, syncSort, sync: () => { if (selected) open(selected, false); }};
+  return {init, enrich, refresh, summary, assessment, isCandidate, rows, syncSort, open, sync: () => { if (selected) open(selected, false); }};
 })();
