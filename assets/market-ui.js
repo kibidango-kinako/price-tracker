@@ -4,7 +4,7 @@
 const MarketUI = (() => {
   const STORE = 'price-tracker.market.v1';
   let period = '7', pickTab = 'priority', heatCount = 60;
-  let loadedDB = null, trades = new Map(), stats = new Map(), asOf = 0, dataStart = 0, dirty = true;
+  let loadedDB = null, trades = new Map(), stats = new Map(), asOf = 0, dataStart = 0, dirty = true, heatWidth = -1;
   const yen = n => n == null || !Number.isFinite(n) ? '—' : '¥' + Math.round(n).toLocaleString('ja-JP');
   const yenShort = n => {
     if (n == null || !Number.isFinite(n)) return '—';
@@ -55,8 +55,14 @@ const MarketUI = (() => {
     document.getElementById('mainView').addEventListener('click', e => {
       const b = e.target.closest('.mk-section [data-purchase-id]'); if (b) PurchaseUI.open(b.dataset.purchaseId);
     });
-    let timer = null, width = window.innerWidth;
-    window.addEventListener('resize', () => { if (window.innerWidth === width) return; width = window.innerWidth; clearTimeout(timer); timer = setTimeout(renderHeat, 150); });
+    // ヒートマップは箱の幅に合わせて描くので、箱の幅そのものを見張る。PCで利益計算パネルを開くと
+    // ウィンドウ幅は変わらずに本文だけ狭くなり、描き直さないと右側が切れる。
+    // 描画時に幅が0だった場合も、幅が付いた時点で描き直す
+    let timer = null, windowWidth = window.innerWidth;
+    const redraw = () => { clearTimeout(timer); timer = setTimeout(renderHeat, 150); };
+    new ResizeObserver(entries => { if (Math.round(entries[0].contentRect.width) !== heatWidth) redraw(); }).observe(document.getElementById('mkHeat'));
+    // 高さはスマートフォン幅かどうかで決まるため、ウィンドウ幅の変化でも描き直す
+    window.addEventListener('resize', () => { if (window.innerWidth !== windowWidth) { windowWidth = window.innerWidth; redraw(); } });
     document.addEventListener('keydown', e => {
       if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.querySelector('dialog[open]')) return;
       e.preventDefault(); document.getElementById('tableSearch').focus();
@@ -165,7 +171,7 @@ const MarketUI = (() => {
 
   function renderHeat() {
     const box = document.getElementById('mkHeat'); if (!box) return;
-    const width = box.clientWidth, height = isMobile() ? 380 : 460;
+    const width = heatWidth = box.clientWidth, height = isMobile() ? 380 : 460;
     document.getElementById('mkHeatNote').textContent = `面積＝${label()}成約額、色＝${label()}変動。押すと利益計算を開きます`;
     if (!width) return;
     const items = tableData.filter(r => r.volume > 0).sort((a, b) => b.volume - a.volume).slice(0, heatCount).map(r => ({value:r.volume, r}));
