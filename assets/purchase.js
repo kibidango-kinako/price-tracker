@@ -1,7 +1,14 @@
 /* Shared calculation rules. Rates are editable assumptions, not fetched fee schedules. */
 (function(root) {
   'use strict';
-  const defaults = {venue:'snkr', fee:9.3, shipping:240, extra:0, buyFees:0, targetRoi:10, targetProfit:2000, minTrades:10, maxAge:3, budget:0};
+  // 販売手数料の初期値は8％（スニダンのゴールド会員）。会員ランクで7.0〜9.5％に変わるため、ランクが変わったら変更する
+  const defaults = {venue:'snkr', fee:8, shipping:240, extra:0, buyFees:0, targetRoi:10, targetProfit:2000, minTrades:10, maxAge:3, budget:0};
+  // 以前の初期値。保存済みの設定がこの値のままなら、新しい初期値に置き換える
+  const oldSnkrFees = [9.3, 9.5];
+  const migrate = saved => saved && saved.venue === 'snkr' && oldSnkrFees.includes(saved.fee) ? {...saved, fee:defaults.fee} : saved;
+  const venueFees = {snkr:{fee:8, shipping:240}, mercari:{fee:10, shipping:160}};
+  // 売値の前提。7日中央値と直近3日中央値の低い方（market.js の saleBase）。無ければ7日中央値
+  const saleBase = row => row.saleBase > 0 ? row.saleBase : row.med7;
   function timestamp(value) {
     if (!value) return NaN;
     const s = String(value).replace(' ', 'T');
@@ -11,7 +18,8 @@
     const s = {...defaults, ...settings};
     if (!(sale > 0) || !Number.isFinite(sale)) return {net:null, limit:null, profit:null, roi:null};
     const net = sale * (1 - s.fee / 100) - s.shipping - s.extra;
-    const limit = Math.max(0, Math.floor(Math.min(net / (1 + s.targetRoi / 100), net - s.targetProfit) - s.buyFees));
+    // 仕入上限は損益分岐点（この商品代金で利益0円）。利益目標は入力した仕入価格の判定にだけ使う
+    const limit = Math.max(0, Math.floor(net - s.buyFees));
     const total = cost > 0 && Number.isFinite(cost) ? cost + s.buyFees : null;
     const profit = total === null ? null : net - total;
     return {net, limit, profit, roi:total === null ? null : profit / total * 100};
@@ -24,8 +32,8 @@
     if (!(row.med7 > 0) || row.cnt7 === 0) reasons.push('直近7日の成約なし');
     else if (row.cnt7 < s.minTrades) reasons.push('取引件数が設定未満');
     if (!Number.isFinite(age) || age < -1 / 24 || age > s.maxAge) reasons.push('最終取引が古い・日時不明');
-    const calc = calculate(row.med7, cost, s);
-    const ref = calculate(row.med7, row.mn7, s);
+    const calc = calculate(saleBase(row), cost, s);
+    const ref = calculate(saleBase(row), row.mn7, s);
     const hasCost = cost > 0;
     const basis = hasCost ? calc : ref;
     const withinBudget = !s.budget || (hasCost ? cost : row.mn7) + s.buyFees <= s.budget;
@@ -72,7 +80,7 @@
     const q = String(keyword || '').replace(/[「」『』]/g, ' ').replace(/\s+/g, ' ').trim();
     return q ? markets.map(([label, base]) => ({label, url: base + encodeURIComponent(q)})) : [];
   }
-  const api = {defaults, timestamp, calculate, assess, compareRows, marketSearches};
+  const api = {defaults, venueFees, migrate, saleBase, timestamp, calculate, assess, compareRows, marketSearches};
   if (typeof module !== 'undefined') module.exports = api;
   else root.Purchase = api;
 })(typeof window !== 'undefined' ? window : globalThis);

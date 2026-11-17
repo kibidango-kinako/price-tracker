@@ -16,7 +16,7 @@ const PurchaseUI = (() => {
   const input = (key, label, min, max, step=1) => `<label>${label}<input name="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${settings[key]}" required></label>`;
   function init() {
     try {
-      const saved = JSON.parse(localStorage.getItem('price-tracker.purchase.v1'));
+      const saved = Purchase.migrate(JSON.parse(localStorage.getItem('price-tracker.purchase.v1')));
       if (saved && valid(saved)) settings = {...settings, ...saved};
     } catch {}
     document.querySelector('.badge-live').textContent = '成約データ';
@@ -33,7 +33,7 @@ const PurchaseUI = (() => {
         <details class="advanced-settings"><summary>梱包費・仕入時費用も設定する</summary><div class="purchase-grid">${input('extra','梱包・その他販売費（円）',0,1000000)}${input('buyFees','仕入時の送料・手数料（円）',0,1000000)}</div></details></fieldset>
         <fieldset><legend>03 / 候補に含める条件</legend><div class="purchase-grid">${input('minTrades','直近7日の最低取得件数',1,100000)}${input('maxAge','最終取引からの上限日数',1,30)}</div></fieldset>
         <p id="settingsError" class="purchase-error" role="status"></p><div class="settings-actions"><button class="purchase-action" type="submit">保存して適用</button><button class="purchase-secondary" type="button" id="purchaseReset">初期値に戻す</button></div></form>
-        <p class="purchase-note">費用は試算用の初期値です。ご自身の販売条件に合わせて変更してください。仕入上限は最低利益額・率の両方を満たす商品代金です。設定のみこのブラウザに保存します。</p>
+        <p class="purchase-note">費用は試算用の初期値です。ご自身の販売条件に合わせて変更してください。スニダンの販売手数料は会員ランクで7.0〜9.5％に変わります（初期値は8％）。ランクが変わったら料率を直してください。仕入上限は損益分岐点（その商品代金で利益0円）で、利益目標には左右されません。利益目標は、入力した仕入価格が「条件達成」かどうかの判定に使います。設定のみこのブラウザに保存します。</p>
       </dialog>
       <dialog class="purchase-detail" id="purchaseDetail" aria-label="仕入利益の計算"></dialog>
       <details class="purchase-data-disclosure"><summary id="purchaseDataSummary">データについて</summary><p class="purchase-data-info" id="purchaseDataInfo"></p></details>`);
@@ -66,8 +66,8 @@ const PurchaseUI = (() => {
     form.elements.venue.value = settings.venue;
     form.elements.venue.addEventListener('change', e => {
       if (e.target.value === 'custom') return;
-      form.elements.fee.value = e.target.value === 'snkr' ? 9.3 : 10;
-      form.elements.shipping.value = e.target.value === 'snkr' ? 240 : 160;
+      form.elements.fee.value = Purchase.venueFees[e.target.value].fee;
+      form.elements.shipping.value = Purchase.venueFees[e.target.value].shipping;
     });
     form.addEventListener('submit', e => {
       e.preventDefault();
@@ -87,7 +87,7 @@ const PurchaseUI = (() => {
       form.requestSubmit();
     });
     const chip = document.getElementById('profitChip');
-    chip.textContent = '仕入候補'; chip.title = '探す優先度が「優先して探す」「候補」で、仕入上限が予算内の商品。仕入価格を入力して条件達成になった商品も含みます';
+    chip.textContent = '仕入候補'; chip.title = '探す優先度が「優先して探す」「候補」で、仕入上限（損益分岐点）が予算内の商品。市場判定が仕入停止の日は出ません。仕入価格を入力して条件達成になった商品は含みます';
     document.getElementById('tableSearch').setAttribute('aria-label','カード名・型番・収録弾を検索');
     document.getElementById('tableSearch').placeholder = 'カード名・型番・収録弾で検索';
     document.getElementById('chartSearchInput').setAttribute('aria-label','チャートの商品検索');
@@ -126,6 +126,7 @@ const PurchaseUI = (() => {
         });
       sparkDB = db;
     }
+    MarketUI.prepare();
     const identities = new Map();
     tableData.forEach(r => {
       const key = [r.card_name, r.rarity, r.collection_no, r.set_name].join('|');
@@ -135,7 +136,8 @@ const PurchaseUI = (() => {
     MarketUI.enrich(settings, assessment);
   }
   // 探す優先度による候補、または入力した仕入価格で条件を満たした商品
-  function isCandidate(r) { return r.isCandidate || assessment(r).eligible; }
+  // 過去安値での参考試算（仕入価格が未入力）は候補に数えない。市場判定が仕入停止の日に候補が残らないようにするため
+  function isCandidate(r) { const a = assessment(r); return r.isCandidate || (a.hasCost && a.eligible); }
   function refresh() { enrich(); renderTableBody(); }
   function summary() {
     const candidates = tableData.filter(isCandidate).length;
@@ -161,7 +163,7 @@ const PurchaseUI = (() => {
       const last = r.last_tx || '不明';
       // 利益は実際の仕入価格を入れたときだけ出す。過去安値は「いま買える価格」ではないため一覧では使わない
       const entered = a.hasCost ? `<div class="mk-entered"><span style="color:${a.profit >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${signed(a.profit)} / ${pct(a.roi)}</span> ${badge(a)}<div class="purchase-small">入力した ${money(costs.get(String(r.apparel_id)))} で計算</div></div>` : '';
-      const value = `<div class="purchase-value">${a.limit === 0 ? '条件を満たす価格なし' : '<span class="purchase-money">' + money(a.limit) + '</span>'}</div>${entered || '<div class="purchase-small">この商品代金以下で目標達成</div>'}`;
+      const value = `<div class="purchase-value">${a.limit === 0 ? '費用が売値を上回る' : '<span class="purchase-money">' + money(a.limit) + '</span>'}</div>${a.limit === 0 ? '' : `<div class="purchase-aim">${r.aim ? '狙い値 <span class="purchase-money">' + money(r.aim) + '</span>' : '全面安：狙い値なし'}</div>`}${entered || '<div class="purchase-small">上限は損益分岐点</div>'}`;
       const price = `${money(r.med7)}<div class="purchase-small" style="white-space:nowrap">7日 ${r.cnt7}件<br>最終 ${esc(last.slice(5))}</div>`;
       if (mobile) return `<tr class="card-row ${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td class="purchase-cards"><div class="purchase-card-top">${product(r)}</div><div class="purchase-card-values"><div><span>仕入上限</span>${value}</div><div><span>探す優先度</span>${MarketUI.priorityCell(r)}</div></div><div class="purchase-card-foot"><span class="purchase-small">7日中央値 ${money(r.med7)} ／ ${r.cnt7}件<br>${MarketUI.label()}変動 ${MarketUI.change(r.chg)} ／ 成約額 ${MarketUI.yenShort(r.volume)}<br>相場：${trend} ／ 最終成約 ${esc(last)}</span><div class="mobile-spark">${sparkline(r)}<span>30日・日別平均</span></div></div></td></tr>`;
       return `<tr class="${String(r.apparel_id) === selected ? 'selected-product' : ''}"><td>${product(r)}</td><td>${price}</td><td>${MarketUI.changeCell(r)}</td><td>${sparkline(r)}</td><td>${MarketUI.volumeCell(r)}</td><td>${value}</td><td>${MarketUI.priorityCell(r)}</td><td>${trend}</td></tr>`;
@@ -175,10 +177,10 @@ const PurchaseUI = (() => {
     const wasOpen = detail.open;
     detail.innerHTML = `<div class="drawer-heading"><span class="purchase-eyebrow">PROFIT CALCULATOR</span><button class="purchase-secondary" id="closePurchase" aria-label="商品詳細を閉じる">閉じる</button></div><h2>${esc(title(r))}</h2><p class="purchase-small">${esc(r.set_name || '')} ／ PSA10 ／ 最終成約 ${esc(r.last_tx || '不明')}</p>
       ${MarketUI.detail(r)}
-      <div class="purchase-grid"><label>実際の仕入商品代金（円）<input id="purchaseCost" type="number" min="1" max="100000000" step="1" placeholder="例：20000" value="${costs.get(selected) || ''}"></label><div class="purchase-small">販売価格の試算基準：直近7日成約中央値 ${money(r.med7)}<br>過去安値 ${money(r.mn7)} は現在買える価格ではありません。</div></div>
+      <div class="purchase-grid"><label>実際の仕入商品代金（円）<input id="purchaseCost" type="number" min="1" max="100000000" step="1" placeholder="例：20000" value="${costs.get(selected) || ''}"></label><div class="purchase-small">売値の前提：${money(Purchase.saleBase(r))}（7日中央値 ${money(r.med7)} と直近3日中央値の低い方）<br>過去安値 ${money(r.mn7)} は現在買える価格ではありません。</div></div>
       <p class="purchase-error" id="costError" role="status"></p><div id="purchaseResult" aria-live="polite"></div>
       <button class="purchase-secondary" id="purchaseChart">この商品のチャートを見る</button> <a class="purchase-view-link" href="${esc(safeURL(r.url))}" target="_blank" rel="noopener noreferrer">SNKRDUNKの商品ページ ↗</a>
-      <details class="purchase-note"><summary>計算方法・判定の根拠</summary>売却手取＝販売価格×（1−手数料率）−販売送料−その他販売費。利益＝売却手取−商品代金−仕入時費用。利益率＝利益÷（商品代金＋仕入時費用）。仕入上限は最低利益額・率を両方満たす額を切り捨て。条件達成には取引件数・鮮度・予算・中立以上のトレンドも必要です。信頼度は件数と鮮度の目安で、値動きやデータの正しさを保証しません。おすすめ度は1＝利益なし・予算超過、2＝利益あり・下落、3＝利益あり・目標未達、4＝目標達成・中立以上、5＝4に加えて入力価格あり・上昇・信頼度高。データ不足・トレンド不明は判定保留。未入力時は過去安値での参考評価で最大4です。税金は含みません。探す優先度は売りやすさ40・相場の向き35・価格の安定25の合計で、仕入価格を入れる前の「探す価値」の目安です。</details>`;
+      <details class="purchase-note"><summary>計算方法・判定の根拠</summary>売却手取＝売値の前提×（1−手数料率）−販売送料−その他販売費。利益＝売却手取−商品代金−仕入時費用。利益率＝利益÷（商品代金＋仕入時費用）。仕入上限は損益分岐点（売却手取−仕入時費用、円未満切り捨て）で、この商品代金で利益0円です。狙い値は上限の5％下（市場判定が注意の日は10％下、仕入停止の日は出しません）。条件達成には最低利益額・率、取引件数・鮮度・予算・中立以上のトレンドも必要です。信頼度は件数と鮮度の目安で、値動きやデータの正しさを保証しません。おすすめ度は1＝利益なし・予算超過、2＝利益あり・下落、3＝利益あり・目標未達、4＝目標達成・中立以上、5＝4に加えて入力価格あり・上昇・信頼度高。データ不足・トレンド不明は判定保留。未入力時は過去安値での参考評価で最大4です。税金は含みません。探す優先度は、過去の成約で下落が多かった状態（過熱・下落中・急騰直後・直近3日の値崩れ・成約半減）に当たらないかを見たもので、仕入価格を入れる前の「探す価値」の目安です。</details>`;
     document.getElementById('purchaseCost').addEventListener('input', e => {
       const el = e.target; const n = Number(el.value);
       const invalid = el.validity.badInput || (el.value !== '' && (!el.checkValidity() || !Number.isInteger(n)));
@@ -238,16 +240,18 @@ const PurchaseUI = (() => {
     if (trigger) trigger.focus({preventScroll:true});
   }
   function updateResult(r, invalid=false) {
-    const a = assessment(r), cost = costs.get(String(r.apparel_id));
+    const a = assessment(r), cost = costs.get(String(r.apparel_id)), base = Purchase.saleBase(r);
+    const level = MarketUI.gate().level, aimNote = level === 'red' ? '市場判定が仕入停止（全面安）のため、狙い値は出していません。'
+      : r.aim ? `狙い値 ${money(r.aim)}（上限の${level === 'blue' ? 5 : 10}％下）。過去の成約では、上限ちょうどの仕入れは通常時でも3〜5割が赤字でした。` : '';
     const label = invalid ? '<span class="purchase-badge warn">入力を確認</span>' : badge(a);
     const scenarios = [0, 5, 10].map(drop => {
-      const sale = r.med7 > 0 ? Math.floor(r.med7 * (1 - drop / 100)) : null;
+      const sale = base > 0 ? Math.floor(base * (1 - drop / 100)) : null;
       const c = Purchase.calculate(sale, cost, settings);
-      return `<tr><td>${drop ? drop + '％下落' : '7日中央値'}</td><td>${money(sale)}</td><td>${signed(c.profit)}</td><td>${pct(c.roi)}</td></tr>`;
+      return `<tr><td>${drop ? drop + '％下落' : '売値の前提'}</td><td>${money(sale)}</td><td>${signed(c.profit)}</td><td>${pct(c.roi)}</td></tr>`;
     }).join('');
-    document.getElementById('purchaseResult').innerHTML = `${label}${invalid ? '' : recommendation(a)}<p class="purchase-note">${esc(a.reasons.join(' ／ ') || '設定した利益・件数・鮮度・予算・相場条件を満たしています。')}</p><div class="purchase-metrics"><div class="purchase-metric"><span class="purchase-small">仕入上限（商品代金）</span><strong class="purchase-value">${a.limit === 0 ? '条件を満たす価格なし' : '<span class="purchase-money">' + money(a.limit) + '</span>'}</strong></div><div class="purchase-metric"><span class="purchase-small">入力価格での利益額</span><strong class="${a.profit === null ? '' : a.profit >= 0 ? 'profit-positive' : 'profit-negative'}">${signed(a.profit)}</strong></div><div class="purchase-metric"><span class="purchase-small">入力価格での利益率</span><strong class="${a.roi === null ? '' : a.roi >= 0 ? 'profit-positive' : 'profit-negative'}">${pct(a.roi)}</strong></div></div>
+    document.getElementById('purchaseResult').innerHTML = `${label}${invalid ? '' : recommendation(a)}<p class="purchase-note">${esc(a.reasons.join(' ／ ') || '設定した利益・件数・鮮度・予算・相場条件を満たしています。')}</p><div class="purchase-metrics"><div class="purchase-metric"><span class="purchase-small">仕入上限＝損益分岐点（商品代金）</span><strong class="purchase-value">${a.limit === 0 ? '費用が売値を上回る' : '<span class="purchase-money">' + money(a.limit) + '</span>'}</strong>${aimNote ? `<span class="purchase-small">${aimNote}</span>` : ''}</div><div class="purchase-metric"><span class="purchase-small">入力価格での利益額</span><strong class="${a.profit === null ? '' : a.profit >= 0 ? 'profit-positive' : 'profit-negative'}">${signed(a.profit)}</strong></div><div class="purchase-metric"><span class="purchase-small">入力価格での利益率</span><strong class="${a.roi === null ? '' : a.roi >= 0 ? 'profit-positive' : 'profit-negative'}">${pct(a.roi)}</strong></div></div>
       <p class="purchase-small">売却手取 ${money(a.net)} ／ 仕入時費用 ${money(settings.buyFees)} ／ 最低利益 ${money(settings.targetProfit)}・${settings.targetRoi}％ ／ 取得 ${r.cnt7}件・信頼度 ${a.confidence}</p>
-      <div style="overflow-x:auto"><table class="purchase-scenarios"><thead><tr><th>販売シナリオ</th><th>販売価格</th><th>利益額</th><th>利益率</th></tr></thead><tbody>${scenarios}</tbody></table></div><p class="purchase-note">中央値は販売価格の仮定です。未入力時は利益を表示しません。データ不足時の仕入上限は参考値です。入力した商品代金はページを再読み込みするまでのみ保持します。</p>${invalid ? '' : MarketUI.position(r, cost)}`;
+      <div style="overflow-x:auto"><table class="purchase-scenarios"><thead><tr><th>販売シナリオ</th><th>販売価格</th><th>利益額</th><th>利益率</th></tr></thead><tbody>${scenarios}</tbody></table></div><p class="purchase-note">売値の前提は販売価格の仮定です。未入力時は利益を表示しません。データ不足時の仕入上限は参考値です。入力した商品代金はページを再読み込みするまでのみ保持します。</p>${invalid ? '' : MarketUI.position(r, cost)}`;
   }
   return {init, enrich, refresh, summary, assessment, isCandidate, rows, syncSort, open, sync: () => { if (selected) open(selected, false); }};
 })();

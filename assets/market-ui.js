@@ -1,10 +1,10 @@
-/* Market overview for the PSA10 dashboards: period switch, summary tiles,
+/* Market overview for the PSA10 dashboards: period switch, market gate, summary tiles,
    search candidates, heatmap and the market block of the detail drawer.
    Reads the page's db / tableData; calculations live in market.js. */
 const MarketUI = (() => {
   const STORE = 'price-tracker.market.v1';
   let period = '7', pickTab = 'priority', heatCount = 60;
-  let loadedDB = null, trades = new Map(), stats = new Map(), asOf = 0, dataStart = 0, dirty = true, heatWidth = -1;
+  let loadedDB = null, trades = new Map(), stats = new Map(), ranks = new Map(), gate = Market.gate([]), asOf = 0, dataStart = 0, dirty = true, heatWidth = -1;
   const yen = n => n == null || !Number.isFinite(n) ? '—' : '¥' + Math.round(n).toLocaleString('ja-JP');
   const yenShort = n => {
     if (n == null || !Number.isFinite(n)) return '—';
@@ -36,6 +36,7 @@ const MarketUI = (() => {
       <section class="mk-section" aria-labelledby="mkOverviewTitle">
         <div class="mk-bar"><h3 id="mkOverviewTitle">市場の概況</h3><span class="mk-asof" id="mkAsOf"></span>${segmented('mkPeriods', '集計期間', Market.PERIODS.map(p => [p.key, p.label]), period)}</div>
         <p class="mk-stale" id="mkStale" role="status" hidden></p>
+        <div class="mk-gate" id="mkGate" role="status"></div>
         <div class="mk-tiles" id="mkTiles"></div>
       </section>
       <section class="mk-section" aria-labelledby="mkPicksTitle">
@@ -48,7 +49,7 @@ const MarketUI = (() => {
         <div class="mk-heat" id="mkHeat"></div>
         <div class="mk-legend" aria-hidden="true"><span><i style="background:${Market.heatColor(-10)}"></i>下落</span><span><i style="background:${Market.heatColor(0)}"></i>横ばい</span><span><i style="background:${Market.heatColor(10)}"></i>上昇</span><span><i class="mk-pending"></i>集計中</span></div>
       </section>`);
-    document.querySelector('.purchase-data-disclosure').insertAdjacentHTML('beforeend', `<p class="purchase-data-info">期間の変動は、直近の成約の中央値と、その期間だけ前の成約の中央値を比べます（1日は24時間どうし、7日・30日・90日は7日間どうし）。どちらかの成約が2件未満、または収集開始より前にかかる場合は「集計中」とし、0％とは扱いません。基準はデータ内の最新成約時刻です。成約額は取得できた成約価格の合計で、取引の多い商品は1日あたりの取得数に上限があるため実際より小さくなります。</p><p class="purchase-data-info">探す優先度（0〜100）は、売りやすさ40（7日の成約件数と成約のあった日数）・相場の向き35（7日と30日の変動）・価格の安定25（7日の成約価格の10〜90％幅）の合計です。スニダン内の成約価格は中央値の近くに集まるため、安く買える余地は測っていません。仕入上限以下で他の販路から買えた場合に売り抜けやすいかの目安で、今後の値動きを示すものではありません。7日で20％以上の急騰、7日で8％以上または30日で20％以上の下落は「様子見」以下にします。</p>`);
+    document.querySelector('.purchase-data-disclosure').insertAdjacentHTML('beforeend', `<p class="purchase-data-info">期間の変動は、直近の成約の中央値と、その期間だけ前の成約の中央値を比べます（1日は24時間どうし、7日・30日・90日は7日間どうし）。どちらかの成約が2件未満、または収集開始より前にかかる場合は「集計中」とし、0％とは扱いません。基準はデータ内の最新成約時刻です。成約額は取得できた成約価格の合計で、取引の多い商品は1日あたりの取得数に上限があるため実際より小さくなります。</p><p class="purchase-data-info">市場判定は、7日変動を出せた商品（7日5件以上）の変動の中央値と、3％を超えて上げた・下げた商品の割合で決めます。中央値が−3％以下、または下げた商品が50％以上で「仕入停止」、中央値が−1％以下、または下げた割合が上げた割合より10ポイント以上多いと「注意」、それ以外は「通常」です。2026年7〜11月のポケモンPSA10成約では、仕入停止に当たる日は条件に関係なく約3割の商品が2週間以内に10％以上下げました。判定は遅れて出ます（下落の初動と底打ちは拾えません）。</p><p class="purchase-data-info">探す優先度は、同じ成約データで下落が多かった状態を外したものです。①7日${Market.RULE.hotCount}件以上またはランキング${Market.RULE.hotRank}位以内（過熱）、②7日変動が${Market.RULE.fall}％以下または+${Market.RULE.surge}％以上、③直近3日の中央値が7日中央値より${-Market.RULE.gap}％以上安い、④成約件数が前週の半分以下、のどれにも当たらない商品が候補で、成約件数が前週の${Market.RULE.volUp}倍以上なら「優先して探す」です。1つ当たると「様子見」、2つ以上で「見送り」。仕入停止の日は候補を出しません。相場の向きの強さ・価格の安定・レアリティ・価格帯は、市場全体の動きを引くと差が出なかったため使っていません。根拠は4か月・下落と反発が1回ずつのデータで、しきい値はポケモンの成約から決めています。スニダン内の成約だけを見ており、他の販路で上限以下で買える確率は測っていません。</p><p class="purchase-data-info">売値の前提は7日中央値と直近3日中央値（3件以上）の低い方です。仕入上限はその損益分岐点で、上限ちょうどで仕入れると過去データでは通常時でも3〜5割が赤字でした。狙い値は上限の${Market.SAFETY.blue * 100}％下（注意の日は${Market.SAFETY.yellow * 100}％下）です。</p>`);
     document.getElementById('mkPeriods').addEventListener('click', e => { const b = e.target.closest('button[data-key]'); if (b) setPeriod(b.dataset.key); });
     document.getElementById('mkPickTabs').addEventListener('click', e => { const b = e.target.closest('button[data-key]'); if (!b) return; pickTab = b.dataset.key; press('mkPickTabs', pickTab); renderPicks(); });
     document.getElementById('mkHeatCount').addEventListener('change', e => { heatCount = Number(e.target.value); renderHeat(); });
@@ -83,19 +84,31 @@ const MarketUI = (() => {
       if (t < dataStart) dataStart = t;
     });
     stats = new Map([...trades].map(([id, list]) => [id, Market.metrics(list, asOf, dataStart)]));
+    gate = Market.gate([...stats.values()]);
+    // いまのランキング順位。card_master が無いデータは、最新収集日の順位を使う（過去の最高順位は使わない）
+    ranks = new Map();
+    const put = sql => { try { (db.exec(sql)[0]?.values || []).forEach(([id, rank]) => { if (rank > 0) ranks.set(String(id), rank); }); } catch {} };
+    put('SELECT apparel_id, rank FROM card_master');
+    if (!ranks.size) put(`SELECT apparel_id, MIN(rank) FROM ${table} WHERE collected_date = (SELECT MAX(collected_date) FROM ${table}) GROUP BY apparel_id`);
     loadedDB = db;
+  }
+
+  // 利益計算より先に、売値の前提（7日中央値と直近3日中央値の低い方）を各商品に付ける
+  function prepare() {
+    load();
+    tableData.forEach(r => { r.market = stats.get(String(r.apparel_id)) || null; r.saleBase = r.market?.saleBase ?? r.med7; });
   }
 
   // PurchaseUI.enrich() から、商品の同定・設定が決まったあとに呼ばれる
   function enrich(settings, assess) {
-    load();
+    prepare();
     tableData.forEach(r => {
-      const m = stats.get(String(r.apparel_id)) || null, a = assess(r), p = m?.periods[period];
-      r.market = m;
+      const m = r.market, a = assess(r), p = m?.periods[period];
       r.priority = a.label === 'データ不足'
-        ? {score:null, tier:null, label:'集計中', flags:[], parts:null, reason:a.reasons[0]}
-        : Market.priority(m, {minTrades:settings.minTrades});
+        ? {score:null, tier:null, label:'集計中', flags:[], checks:null, reason:a.reasons[0]}
+        : Market.priority(m, {minTrades:settings.minTrades, gate, rank:ranks.get(String(r.apparel_id))});
       r.priorityScore = r.priority.score;
+      r.aim = Market.aim(a.limit, gate.level);
       r.chg = p?.change ?? null; r.chgYen = p?.changeYen ?? null;
       r.volume = p?.volume || null; r.volumePrev = p?.volumePrev ?? null; r.periodCount = p?.count ?? 0;
       const withinBudget = !settings.budget || (a.limit > 0 && a.limit + settings.buyFees <= settings.budget);
@@ -116,7 +129,21 @@ const MarketUI = (() => {
     const stale = document.getElementById('mkStale'), age = (Date.now() - asOf) / Market.DAY;
     stale.hidden = !(asOf && age > 2);
     if (!stale.hidden) stale.textContent = `最新の成約データは ${stamp(asOf)} です（${Math.floor(age)}日前）。収集が止まっている可能性があります。`;
-    renderTiles(); renderPicks(); renderHeat();
+    renderGate(); renderTiles(); renderPicks(); renderHeat();
+  }
+
+  // 市場判定。色だけに頼らないよう、記号と言葉を必ず添える
+  const GATE_VIEW = {
+    red:{mark:'■', text:'全面安です。条件に関係なく下げやすい局面のため、候補を出していません。'},
+    yellow:{mark:'▲', text:'弱含みです。候補は出しますが、狙い値を上限の10％下にしています。'},
+    blue:{mark:'●', text:'全体は落ち着いています。狙い値は上限の5％下です。'}
+  };
+  function renderGate() {
+    const box = document.getElementById('mkGate'), view = GATE_VIEW[gate.level];
+    box.className = 'mk-gate gate-' + (gate.level || 'none');
+    box.innerHTML = view
+      ? `<strong><span aria-hidden="true">${view.mark}</span> 市場判定：${gate.label}</strong><span>${view.text}</span><em>7日変動の中央値 ${pct(gate.median)}／3％超の上げ ${(gate.up * 100).toFixed(0)}％・下げ ${(gate.down * 100).toFixed(0)}％（${gate.count}商品）</em>`
+      : `<strong>市場判定：集計中</strong><span>7日変動を比べられる商品が${gate.count}件のため判定できません。狙い値は注意の日と同じ幅にしています。</span>`;
   }
 
   function renderTiles() {
@@ -139,7 +166,9 @@ const MarketUI = (() => {
 
   const pickers = {
     priority: {rows: () => tableData.filter(r => r.isCandidate).sort((a, b) => b.priorityScore - a.priorityScore || (b.market.cnt7 - a.market.cnt7)),
-      note: n => n ? '売りやすさ・相場の向き・価格の安定が揃っている順です。仕入上限以下の出品を他の販路で探し、見つけた価格を「利益を計算」に入れて確かめます。' : '条件を満たす候補がありません。仕入条件（予算・最低件数・目標利益）を確認してください。'},
+      note: n => gate.level === 'red' ? '市場が全面安のため、候補を出していません。過去のデータでは、この状態の日は条件を満たす商品も満たさない商品も同じように下げています。'
+        : n ? '下落の多かった状態（過熱・下落中・急騰直後・直近3日の値崩れ・成約半減）を外し、成約件数の伸びが大きい順に並べています。仕入上限は損益分岐点です。狙い値以下の出品を他の販路で探し、見つけた価格を「利益を計算」に入れて確かめます。'
+        : '条件を満たす候補がありません。仕入条件（予算・最低件数）を確認してください。'},
     gainers: {rows: () => tableData.filter(r => r.priorityScore !== null && r.chg !== null && r.chg > 0).sort((a, b) => b.chg - a.chg),
       note: () => `${label()}の値上がり率が大きい順です（成約件数と鮮度の条件を満たす商品のみ）。急な値上がりの直後は売値の前提が崩れやすい点に注意してください。`},
     losers: {rows: () => tableData.filter(r => r.priorityScore !== null && r.chg !== null && r.chg < 0).sort((a, b) => a.chg - b.chg),
@@ -152,18 +181,20 @@ const MarketUI = (() => {
     document.getElementById('mkPickNote').textContent = pickers[pickTab].note(rows.length);
     document.getElementById('mkPicks').innerHTML = rows.map((r, i) => {
       const a = PurchaseUI.assessment(r), src = thumb(r), search = Purchase.marketSearches([r.card_name, String(r.collection_no || '').split(' ').pop(), 'PSA10'].filter(Boolean).join(' '))[0];
-      const head = pickTab === 'priority' ? `<span class="mk-score tier-${r.priority.tier}">${r.priorityScore}</span>` : pickTab === 'volume' ? `<span class="mk-pick-main">${yenShort(r.volume)}</span>` : `<span class="mk-pick-main">${change(r.chg)}</span>`;
+      const head = pickTab === 'priority' ? `<span class="mk-pick-main">${ratio(r.market)}</span>` : pickTab === 'volume' ? `<span class="mk-pick-main">${yenShort(r.volume)}</span>` : `<span class="mk-pick-main">${change(r.chg)}</span>`;
       return `<li class="mk-pick"><div class="mk-pick-head"><span class="mk-rank">${i + 1}</span>${head}${tierChip(r.priority)}</div>
         <button type="button" class="mk-pick-body" data-purchase-id="${esc(r.apparel_id)}" aria-label="${esc(title(r))}の利益を計算">
           ${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : '<span class="mk-noimg" aria-hidden="true">PSA10</span>'}
           <span class="mk-pick-text"><span class="mk-pick-name">${esc(title(r))}</span>
-            <span class="mk-kv"><span>7日中央値</span><b>${yen(r.med7)}</b></span>
-            <span class="mk-kv"><span>仕入上限</span><b class="mk-limit">${a.limit > 0 ? yen(a.limit) : '—'}</b></span>
+            <span class="mk-kv"><span>売値の前提</span><b>${yen(r.saleBase)}</b></span>
+            <span class="mk-kv"><span>仕入上限（損益分岐）</span><b class="mk-limit">${a.limit > 0 ? yen(a.limit) : '—'}</b></span>
+            <span class="mk-kv"><span>狙い値</span><b>${r.aim ? yen(r.aim) : '—'}</b></span>
             <span class="mk-kv"><span>${label()}変動</span><b>${change(r.chg)}</b></span></span></button>
         <p class="purchase-small">${esc(r.priority.reason)}</p>
         ${search ? `<a class="card-market-link" href="${esc(search.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(title(r))}を${search.label}で探す（新しいタブ）">${search.label}で探す ↗</a>` : ''}</li>`;
     }).join('');
   }
+  const ratio = m => m?.volRatio == null ? '前週比 —' : `前週比 ×${m.volRatio.toFixed(2)}`;
   function tierChip(p) {
     const flags = p.flags.map(f => `<span class="mk-flag">${f}</span>`).join('');
     return `<span class="mk-tier tier-${p.tier || 'none'}">${p.label}</span>${flags}`;
@@ -190,10 +221,10 @@ const MarketUI = (() => {
   function priorityCell(r) {
     const p = r.priority;
     if (!p || p.score === null) return `<div class="mk-priority"><span class="mk-tier tier-none">集計中</span><div class="purchase-small">${esc(p?.reason || '成約データなし')}</div></div>`;
-    return `<div class="mk-priority"><div class="mk-priority-top"><span class="mk-score tier-${p.tier}">${p.score}</span>${tierChip(p)}</div>${bars(p)}</div>`;
+    return `<div class="mk-priority"><div class="mk-priority-top"><span class="mk-score tier-${p.tier}">${p.tier}</span>${tierChip(p)}</div>${checks(p)}<div class="purchase-small">成約件数 ${ratio(r.market)}</div></div>`;
   }
-  const PARTS = [['liquidity', '売りやすさ'], ['trend', '相場の向き'], ['stability', '価格の安定']];
-  const bars = p => `<div class="mk-bars mk-bars-labelled" role="img" aria-label="${PARTS.map(([k, name]) => `${name} ${Math.round(p.parts[k] * 100)}`).join('、')}">${PARTS.map(([k, name]) => `<div title="${name} ${Math.round(p.parts[k] * 100)}/100"><span><i style="width:${Math.round(p.parts[k] * 100)}%"></i></span><small>${name}</small></div>`).join('')}</div>`;
+  // 4つの条件を、記号（✓／×）と言葉で示す
+  const checks = p => `<ul class="mk-checks" aria-label="候補の条件">${p.checks.map(c => `<li class="${c.ok ? 'ok' : 'ng'}" title="${esc(c.name)}：${esc(c.text)}" aria-label="${esc(c.name)}：${c.ok ? '満たす' : '満たさない'}（${esc(c.text)}）"><span aria-hidden="true">${c.ok ? '✓' : '×'}</span>${esc(c.name)}</li>`).join('')}</ul>`;
   const changeCell = r => `${change(r.chg)}<div class="purchase-small">${r.chgYen === null ? '比較できる成約なし' : (r.chgYen >= 0 ? '+' : '−') + yen(Math.abs(r.chgYen))}</div>`;
   const volumeCell = r => {
     const v = r.volume && r.volumePrev > 0 ? (r.volume - r.volumePrev) / r.volumePrev * 100 : null;
@@ -206,8 +237,9 @@ const MarketUI = (() => {
     if (!m) return '';
     const rows = Market.PERIODS.map(x => `<td>${change(m.periods[x.key].change)}</td>`).join('');
     const part = !p || p.score === null ? `<p class="purchase-small">探す優先度は集計中です：${esc(p?.reason || '')}</p>`
-      : `<div class="mk-detail-score"><span class="mk-score tier-${p.tier}">${p.score}</span><div>${tierChip(p)}<div class="purchase-small">${esc(p.reason)}</div></div></div>
-         <dl class="mk-parts">${PARTS.map(([k, name]) => `<div><dt>${name}</dt><dd><span class="mk-bars"><span><i style="width:${Math.round(p.parts[k] * 100)}%"></i></span></span>${Math.round(p.parts[k] * 100)}</dd></div>`).join('')}</dl>`;
+      : `<div class="mk-detail-score"><span class="mk-score tier-${p.tier}">${p.tier}</span><div>${tierChip(p)}<div class="purchase-small">${esc(p.reason)}</div></div></div>
+         <dl class="mk-parts">${p.checks.map(c => `<div><dt>${esc(c.name)}</dt><dd><span class="mk-check ${c.ok ? 'ok' : 'ng'}"><span aria-hidden="true">${c.ok ? '✓' : '×'}</span> ${c.ok ? '満たす' : '満たさない'}</span>${esc(c.text)}</dd></div>`).join('')}</dl>
+         <p class="purchase-small">市場判定：${gate.label}／売値の前提 ${yen(m.saleBase)}（7日中央値 ${yen(m.med7)}・直近3日中央値 ${m.med3 === null ? '3件未満' : yen(m.med3)} の低い方）</p>`;
     return `<section class="mk-detail" aria-label="市場データ"><h3>探す優先度</h3>${part}
       <table class="mk-periods"><thead><tr>${Market.PERIODS.map(x => `<th>${x.label}変動</th>`).join('')}</tr></thead><tbody><tr>${rows}</tr></tbody></table>
       <p class="purchase-small">7日の成約 ${m.cnt7}件（1日あたり ${m.perDay7.toFixed(1)}件）／${label()}成約額 ${yenShort(r.volume)}／価格幅 ${m.spread7 === null ? '集計中' : (m.spread7 * 100).toFixed(1) + '％'}</p></section>`;
@@ -220,5 +252,5 @@ const MarketUI = (() => {
     return `<p class="purchase-note">${text}${pos.share === 0 ? 'スニダンのどの成約よりも安い価格です。真贋・状態・鑑定番号を必ず確認してください。' : ''}</p>`;
   }
 
-  return {init, enrich, render, priorityCell, changeCell, volumeCell, detail, position, label, yenShort, change};
+  return {init, prepare, enrich, render, priorityCell, changeCell, volumeCell, detail, position, label, yenShort, change, gate: () => gate};
 })();
