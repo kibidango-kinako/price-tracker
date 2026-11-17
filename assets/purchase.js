@@ -1,9 +1,12 @@
 /* Shared calculation rules. Rates are editable assumptions, not fetched fee schedules. */
 (function(root) {
   'use strict';
-  // 販売手数料の初期値はスニダンのレギュラー会員（9.5％）。会員ランクで7.0〜9.5％に変わるため、自分のランクに合わせて変更する
-  const defaults = {venue:'snkr', fee:9.5, shipping:240, extra:0, buyFees:0, targetRoi:10, targetProfit:2000, minTrades:10, maxAge:3, budget:0};
-  const venueFees = {snkr:{fee:9.5, shipping:240}, mercari:{fee:10, shipping:160}};
+  // 販売手数料の初期値は8％（スニダンのゴールド会員）。会員ランクで7.0〜9.5％に変わるため、ランクが変わったら変更する
+  const defaults = {venue:'snkr', fee:8, shipping:240, extra:0, buyFees:0, targetRoi:10, targetProfit:2000, minTrades:10, maxAge:3, budget:0};
+  // 以前の初期値。保存済みの設定がこの値のままなら、新しい初期値に置き換える
+  const oldSnkrFees = [9.3, 9.5];
+  const migrate = saved => saved && saved.venue === 'snkr' && oldSnkrFees.includes(saved.fee) ? {...saved, fee:defaults.fee} : saved;
+  const venueFees = {snkr:{fee:8, shipping:240}, mercari:{fee:10, shipping:160}};
   // 売値の前提。7日中央値と直近3日中央値の低い方（market.js の saleBase）。無ければ7日中央値
   const saleBase = row => row.saleBase > 0 ? row.saleBase : row.med7;
   function timestamp(value) {
@@ -77,7 +80,7 @@
     const q = String(keyword || '').replace(/[「」『』]/g, ' ').replace(/\s+/g, ' ').trim();
     return q ? markets.map(([label, base]) => ({label, url: base + encodeURIComponent(q)})) : [];
   }
-  const api = {defaults, venueFees, saleBase, timestamp, calculate, assess, compareRows, marketSearches};
+  const api = {defaults, venueFees, migrate, saleBase, timestamp, calculate, assess, compareRows, marketSearches};
   if (typeof module !== 'undefined') module.exports = api;
   else root.Purchase = api;
 })(typeof window !== 'undefined' ? window : globalThis);

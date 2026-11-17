@@ -16,7 +16,7 @@ const PurchaseUI = (() => {
   const input = (key, label, min, max, step=1) => `<label>${label}<input name="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${settings[key]}" required></label>`;
   function init() {
     try {
-      const saved = JSON.parse(localStorage.getItem('price-tracker.purchase.v1'));
+      const saved = Purchase.migrate(JSON.parse(localStorage.getItem('price-tracker.purchase.v1')));
       if (saved && valid(saved)) settings = {...settings, ...saved};
     } catch {}
     document.querySelector('.badge-live').textContent = '成約データ';
@@ -33,7 +33,7 @@ const PurchaseUI = (() => {
         <details class="advanced-settings"><summary>梱包費・仕入時費用も設定する</summary><div class="purchase-grid">${input('extra','梱包・その他販売費（円）',0,1000000)}${input('buyFees','仕入時の送料・手数料（円）',0,1000000)}</div></details></fieldset>
         <fieldset><legend>03 / 候補に含める条件</legend><div class="purchase-grid">${input('minTrades','直近7日の最低取得件数',1,100000)}${input('maxAge','最終取引からの上限日数',1,30)}</div></fieldset>
         <p id="settingsError" class="purchase-error" role="status"></p><div class="settings-actions"><button class="purchase-action" type="submit">保存して適用</button><button class="purchase-secondary" type="button" id="purchaseReset">初期値に戻す</button></div></form>
-        <p class="purchase-note">費用は試算用の初期値です。ご自身の販売条件に合わせて変更してください。スニダンの販売手数料は会員ランクで変わるため（初期値はレギュラーの9.5％）、自分のランクの料率を入れてください。仕入上限は損益分岐点（その商品代金で利益0円）で、利益目標には左右されません。利益目標は、入力した仕入価格が「条件達成」かどうかの判定に使います。設定のみこのブラウザに保存します。</p>
+        <p class="purchase-note">費用は試算用の初期値です。ご自身の販売条件に合わせて変更してください。スニダンの販売手数料は会員ランクで7.0〜9.5％に変わります（初期値は8％）。ランクが変わったら料率を直してください。仕入上限は損益分岐点（その商品代金で利益0円）で、利益目標には左右されません。利益目標は、入力した仕入価格が「条件達成」かどうかの判定に使います。設定のみこのブラウザに保存します。</p>
       </dialog>
       <dialog class="purchase-detail" id="purchaseDetail" aria-label="仕入利益の計算"></dialog>
       <details class="purchase-data-disclosure"><summary id="purchaseDataSummary">データについて</summary><p class="purchase-data-info" id="purchaseDataInfo"></p></details>`);

@@ -5,14 +5,14 @@ const now = Date.parse('2026-10-16T08:00:00+09:00');
 const row = {med7:30000, mn7:20000, cnt7:25, last_tx:'2026-10-16 07:00', trendScore:5};
 test('fees, shipping, acquisition fees and ROI share the same cost basis', () => {
  const c = P.calculate(30000,20000,{buyFees:1000});
- assert.equal(c.net,26910); assert.equal(c.profit,5910); assert.equal(c.roi,5910/21000*100);
+ assert.equal(c.net,27360); assert.equal(c.profit,6360); assert.equal(c.roi,6360/21000*100);
 });
 test('purchase limit is the breakeven price: profit is zero or more at the limit and negative one yen above',()=>{
  for (const settings of [{}, {buyFees:1500,targetProfit:8000}, {fee:10,shipping:160,targetRoi:20}, {fee:7,extra:120}]) {
   const s = {...P.defaults,...settings}, c=P.calculate(30000,null,s), at=P.calculate(30000,c.limit,s), next=P.calculate(30000,c.limit+1,s);
   assert.ok(at.profit >= 0 && at.profit < 1); assert.ok(next.profit < 0);
  }
- assert.equal(P.calculate(20600,null,{}).limit,18403);           // 20,600×0.905−240
+ assert.equal(P.calculate(20600,null,{}).limit,18712);           // 20,600×0.92−240
  assert.equal(P.calculate(20600,null,{fee:7}).limit,18918);
  // 利益目標を変えても上限は動かない
  assert.equal(P.calculate(30000,null,{targetProfit:9000,targetRoi:50}).limit,P.calculate(30000,null,{targetProfit:0,targetRoi:0}).limit);
@@ -22,7 +22,7 @@ test('the sale basis from market data replaces the 7-day median when present',()
  assert.equal(P.saleBase({med7:30000}),30000); assert.equal(P.saleBase({med7:30000,saleBase:28000}),28000);
  assert.equal(P.saleBase({med7:30000,saleBase:null}),30000);
  const a=P.assess({...row,saleBase:28000},{},20000,now);
- assert.equal(a.net,28000*0.905-240); assert.equal(a.limit,25100);
+ assert.equal(a.net,28000*0.92-240); assert.equal(a.limit,25520);
 });
 test('missing or invalid costs never produce an actual profit',()=>{
  for(const n of [null,undefined,0,-10,NaN,Infinity]) assert.equal(P.calculate(30000,n,{}).profit,null);
@@ -46,7 +46,7 @@ test('Japan timestamps do not depend on the viewer timezone',()=>{
 });
 test('lower selling prices reduce profit by their fee-adjusted amount',()=>{
  const a=P.calculate(30000,20000,{}), b=P.calculate(27000,20000,{});
- assert.ok(Math.abs((a.profit-b.profit)-2715)<1e-6);
+ assert.ok(Math.abs((a.profit-b.profit)-2760)<1e-6);
 });
 test('ambiguous product variants cannot become candidates',()=>{
  const a=P.assess({...row,identityUncertain:true},{},1000,now);
@@ -98,4 +98,11 @@ test('market search links encode the keyword and drop bracket marks', () => {
  assert.deepEqual(links.map(m => m.label), ['メルカリ','Yahoo!フリマ','ヤフオク']);
  for (const m of links) assert.ok(m.url.endsWith(encodeURIComponent('構築デッキ メガゲンガー 230/193')));
  assert.deepEqual(P.marketSearches('  '), []);
+});
+test('saved settings still on an old default SNKRDUNK fee move to the new default; chosen fees are kept',()=>{
+ assert.equal(P.defaults.fee,8); assert.equal(P.venueFees.snkr.fee,8);
+ assert.equal(P.migrate({venue:'snkr',fee:9.3,targetProfit:5000}).fee,8); assert.equal(P.migrate({venue:'snkr',fee:9.5}).fee,8);
+ assert.equal(P.migrate({venue:'snkr',fee:9.3,targetProfit:5000}).targetProfit,5000);
+ assert.equal(P.migrate({venue:'snkr',fee:7}).fee,7); assert.equal(P.migrate({venue:'mercari',fee:10}).fee,10); assert.equal(P.migrate({venue:'custom',fee:9.5}).fee,9.5);
+ assert.equal(P.migrate(null),null);
 });
