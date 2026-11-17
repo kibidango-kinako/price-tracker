@@ -1,5 +1,5 @@
 /* Market-wide metrics for the PSA10 dashboards: period changes, traded value,
-   search priority and the heatmap layout. Pure functions, no DOM. */
+   market gate, search priority and the heatmap layout. Pure functions, no DOM. */
 (function(root) {
   'use strict';
   const DAY = 86400000;
@@ -11,6 +11,7 @@
     {key:'90', label:'90日', days:90, window:7}
   ];
   const MIN_SAMPLE = 2;   // 中央値を出すのに必要な成約数。満たさない期間は「集計中」
+  const MIN_RECENT = 3;   // 直近3日の中央値を出すのに必要な成約数
   const clamp = (v, lo=0, hi=1) => Math.min(hi, Math.max(lo, v));
 
   function median(values) {
@@ -50,47 +51,79 @@
     const prices = week.map(x => x.p);
     const mid = median(prices);
     const activeDays = new Set(week.map(x => Math.floor((asOf - x.t) / DAY))).size;
+    // 直近3日の中央値。7日中央値は下落の途中で遅れるので、売値の前提は低い方を使う
+    const last3 = pricesIn(trades, asOf - 3 * DAY, asOf);
+    const med3 = last3.length >= MIN_RECENT ? median(last3) : null;
+    // 前週の成約件数。収集開始より前にかかる場合は比べない
+    const cntPrev7 = asOf - 14 * DAY >= dataStart ? pricesIn(trades, asOf - 14 * DAY, asOf - 7 * DAY).length : null;
     return {
       periods, cnt7: week.length, activeDays7: activeDays, perDay7: week.length / 7,
+      med7: mid, med3, saleBase: mid === null ? null : med3 === null ? mid : Math.min(mid, med3),
+      gap3: mid > 0 && med3 !== null ? (med3 - mid) / mid * 100 : null,
+      cntPrev7, volRatio: cntPrev7 > 0 ? week.length / cntPrev7 : null,
       // 価格のばらつき: 直近7日の成約価格の10〜90％幅 ÷ 中央値
       spread7: prices.length >= 5 && mid > 0 ? (quantile(prices, .9) - quantile(prices, .1)) / mid : null
     };
   }
 
-  /* 探す優先度（0〜100）。スニダン内の成約価格は中央値の近くに集まるため「安値で拾える余地」は
-     測れない。代わりに「仕入上限以下で他の販路から買えたとして、売り抜けやすいか」を
-     売りやすさ40・相場の向き35・価格の安定25で表す。将来の値動きを示すものではない。 */
+  /* 市場ゲート。2026年7〜11月のスニダンPSA10成約（ポケモン）では、個別カードの形より市場全体の向きが
+     その後2週間の値動きを決めていた。全面安の日は、どの条件のカードも約3割が1割以上下げている。
+     level: red＝仕入停止、yellow＝注意、blue＝通常、null＝比べられる商品が少なく判定できない。 */
+  const GATE = {minCount:5, minCards:20, band:3, redMedian:-3, redDown:.5, yellowMedian:-1, yellowBreadth:.10};
+  const GATE_LABEL = {red:'仕入停止', yellow:'注意', blue:'通常'};
+  // 上限（損益分岐点）からどれだけ下を狙うか。上限ちょうどの仕入れは通常時でも3〜5割が赤字だった
+  const SAFETY = {blue:.05, yellow:.10};
+  function gate(list) {
+    const changes = list.filter(m => m && m.cnt7 >= GATE.minCount && m.periods['7'].change !== null).map(m => m.periods['7'].change);
+    if (changes.length < GATE.minCards) return {level:null, label:'集計中', median:null, up:null, down:null, count:changes.length};
+    const mid = median(changes), up = changes.filter(v => v > GATE.band).length / changes.length, down = changes.filter(v => v < -GATE.band).length / changes.length;
+    const level = mid <= GATE.redMedian || down >= GATE.redDown ? 'red' : mid <= GATE.yellowMedian || down - up >= GATE.yellowBreadth ? 'yellow' : 'blue';
+    return {level, label:GATE_LABEL[level], median:mid, up, down, count:changes.length};
+  }
+  // 狙い値。全面安（red）では出さない。判定できない日は注意と同じ幅にする
+  function aim(limit, level) {
+    if (!(limit > 0) || level === 'red') return null;
+    return Math.floor(limit * (1 - (SAFETY[level] ?? SAFETY.yellow)));
+  }
+
+  /* 探す優先度。同じ成約データで「その日の売値前提に対し、3〜14日後の成約中央値がどうなったか」を調べ、
+     全面安を除く局面で下落が多かった状態を外す。過熱（上位・成約過多）、下落中、急騰直後、直近3日の値崩れ、
+     成約件数の半減の5つ。残った商品のうち成約件数が前週の1.25倍以上を「優先して探す」とする。
+     相場の向きの強さ・価格の安定・レアリティ・価格帯は、市場全体の動きを引くと差が出なかったため使わない。
+     スニダン内の成約だけを見ており、他の販路で上限以下で買える確率は測っていない。 */
   const TIERS = [
-    {key:'A', min:78, label:'優先して探す'},
-    {key:'B', min:65, label:'候補'},
-    {key:'C', min:50, label:'様子見'},
-    {key:'D', min:0, label:'見送り'}
+    {key:'A', label:'優先して探す'},
+    {key:'B', label:'候補'},
+    {key:'C', label:'様子見'},
+    {key:'D', label:'見送り'}
   ];
+  const RULE = {hotCount:50, hotRank:20, fall:-8, surge:15, gap:-4, volMin:.5, volUp:1.25};
   function priority(m, options={}) {
-    const minTrades = options.minTrades ?? 10;
-    if (!m || m.cnt7 < minTrades) return {score:null, tier:null, label:'集計中', flags:[], parts:null, reason:m && m.cnt7 ? `直近7日の成約が${m.cnt7}件（設定は${minTrades}件以上）` : '直近7日の成約なし'};
-    const c7 = m.periods['7'].change, c30 = m.periods['30'].change;
-    const liquidity = .75 * clamp(Math.log1p(m.cnt7) / Math.log1p(70)) + .25 * m.activeDays7 / 7;
-    const g7 = c7 === null ? null : clamp(.5 + c7 / 20), g30 = c30 === null ? null : clamp(.5 + c30 / 40);
-    let trend = g7 !== null && g30 !== null ? .55 * g7 + .45 * g30 : g7 ?? g30 ?? .5;
-    const flags = [];
-    if (c7 !== null && c7 >= 20) { flags.push('急騰'); trend = Math.min(trend, .5); }
-    if ((c7 !== null && c7 <= -8) || (c30 !== null && c30 <= -20)) flags.push('下落中');
-    // 1か月で大きく上がった直後。順位は下げないが、売値の前提が直近の高値である点を示す
-    if (c30 !== null && c30 >= 30 && !flags.includes('急騰')) flags.push('30日急伸');
-    if (c7 === null && c30 === null) flags.push('変動不明');
-    const stability = m.spread7 === null ? .5 : clamp(1 - (m.spread7 - .04) / .2);
-    const score = Math.round(100 * (.40 * liquidity + .35 * trend + .25 * stability));
-    let tier = TIERS.find(t => score >= t.min);
-    // 下落中・急騰直後は売値の前提が崩れやすいので、点数が高くても「様子見」止まりにする
-    if (flags.includes('下落中') || flags.includes('急騰')) tier = TIERS[Math.max(2, TIERS.indexOf(tier))];
-    const pct = v => v === null ? '集計中' : (v > 0 ? '+' : '') + v.toFixed(1) + '％';
-    const reason = [
-      `7日で${m.cnt7}件（成約のあった日 ${m.activeDays7}/7）`,
-      `7日${pct(c7)}／30日${pct(c30)}`,
-      m.spread7 === null ? 'ばらつき不明' : `価格幅${(m.spread7 * 100).toFixed(1)}％`
-    ].join('、');
-    return {score, tier:tier.key, label:tier.label, flags, parts:{liquidity, trend, stability}, reason};
+    const minTrades = options.minTrades ?? 10, level = options.gate?.level ?? null, rank = options.rank;
+    if (!m || m.cnt7 < minTrades) return {score:null, tier:null, label:'集計中', flags:[], checks:null, reason:m && m.cnt7 ? `直近7日の成約が${m.cnt7}件（設定は${minTrades}件以上）` : '直近7日の成約なし'};
+    const c7 = m.periods['7'].change, hotRank = rank > 0 && rank <= RULE.hotRank;
+    const checks = [
+      {key:'heat', name:'過熱なし', ok:m.cnt7 < RULE.hotCount && !hotRank,
+        text:hotRank ? `ランキング${rank}位` : `7日${m.cnt7}件`, flag:'過熱'},
+      {key:'move', name:'値動き', ok:c7 !== null && c7 > RULE.fall && c7 < RULE.surge,
+        text:c7 === null ? '前週と比べられない' : `7日${c7 > 0 ? '+' : ''}${c7.toFixed(1)}％`, flag:c7 === null ? '変動不明' : c7 <= RULE.fall ? '下落中' : '急騰'},
+      {key:'recent', name:'直近3日', ok:m.gap3 === null || m.gap3 > RULE.gap,
+        text:m.gap3 === null ? '直近3日の成約が少ない' : `7日中央値比${m.gap3 > 0 ? '+' : ''}${m.gap3.toFixed(1)}％`, flag:'直近安'},
+      {key:'volume', name:'成約件数', ok:m.volRatio === null || m.volRatio > RULE.volMin,
+        text:m.volRatio === null ? '前週と比べられない' : `前週の${m.volRatio.toFixed(2)}倍`, flag:'成約減'}
+    ];
+    const failed = checks.filter(c => !c.ok), flags = failed.map(c => c.flag);
+    if (level === 'red') flags.unshift('全面安');
+    const rising = m.volRatio !== null && m.volRatio >= RULE.volUp;
+    // 全面安の日は条件を満たしていても候補にしない（条件を満たすカードも満たさないカードも同じだけ下げた）
+    const key = failed.length >= 2 ? 'D' : failed.length === 1 || level === 'red' ? 'C' : rising ? 'A' : 'B';
+    const tier = TIERS.find(t => t.key === key);
+    // 並び順のための値。区分が先、同じ区分の中は成約件数の伸びが大きい順
+    const score = (TIERS.length - 1 - TIERS.indexOf(tier)) * 100 + Math.round(clamp((m.volRatio ?? 0) / 5) * 99);
+    const reason = level === 'red' && !failed.length ? '市場が全面安のため仕入停止。条件は満たしています'
+      : failed.length ? failed.map(c => `${c.flag}（${c.text}）`).join('、')
+      : `4条件を満たす。成約件数は${m.volRatio === null ? '前週と比べられない' : '前週の' + m.volRatio.toFixed(2) + '倍'}`;
+    return {score, tier:tier.key, label:tier.label, flags, checks, reason};
   }
 
   // 入力した仕入価格が、直近の成約の中でどの位置にあるか（その価格以下で成立した割合）
@@ -138,7 +171,7 @@
     return `rgb(${mix(base[0], to[0])},${mix(base[1], to[1])},${mix(base[2], to[2])})`;
   }
 
-  const api = {PERIODS, TIERS, DAY, median, quantile, metrics, priority, pricePosition, treemap, heatColor};
+  const api = {PERIODS, TIERS, GATE, RULE, SAFETY, DAY, median, quantile, metrics, gate, aim, priority, pricePosition, treemap, heatColor};
   if (typeof module !== 'undefined') module.exports = api;
   else root.Market = api;
 })(typeof window !== 'undefined' ? window : globalThis);

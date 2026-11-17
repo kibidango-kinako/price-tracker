@@ -217,7 +217,7 @@
   }
 </style>
 <link rel="stylesheet" href="assets/purchase.css?v=20261017">
-<link rel="stylesheet" href="assets/market.css?v=20261113">
+<link rel="stylesheet" href="assets/market.css?v=20261117">
 </head>
 <body>
 
@@ -286,7 +286,7 @@
         <div class="set-filter-wrap">
           <select id="setFilter" onchange="onSetFilterChange()"></select>
         </div>
-        <button class="chip" id="profitChip" onclick="toggleProfitFilter()" title="想定利益率5%以上・7日10件以上・判定が中立以上・直近3日以内に取引あり、の仕入候補だけを利益率順に表示">💰 仕入候補</button>
+        <button class="chip" id="profitChip" onclick="toggleProfitFilter()" title="探す優先度が「優先して探す」「候補」の商品だけを表示">💰 仕入候補</button>
         <div class="filter-chips" id="rarityChips"></div>
         <span class="result-count" id="resultCount"></span>
       </div>
@@ -323,9 +323,9 @@
               <th class="sortable sort-active" onclick="setSort('dod')"        id="th-dod">前日比<span class="sort-icon" id="si-dod">↓</span></th>
               <th class="sortable" onclick="setSort('wow')"        id="th-wow" title="直近7日中央値 vs その前7日中央値の変化率">週比<span class="sort-icon" id="si-wow"></span></th>
               <th class="sortable" onclick="setSort('trendScore')" id="th-trendScore" title="日次MA5/10/20（5日/10日/20日線）によるトレンド判定">判定<span class="sort-icon" id="si-trendScore"></span></th>
-              <th class="sortable" onclick="setSort('roi7')"       id="th-roi7" title="直近7日の実際の安値で仕入れ、スニダン中央値で売った場合の利益率（手数料9.3%+送料¥240控除後）。5%以上=緑">想定利益<span class="sort-icon" id="si-roi7"></span></th>
-              <th class="hide-mobile" title="スニダン(手数料9.3%+送料¥240)で利益率10%が出る仕入上限（直近7日中央値ベース）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
-              <th class="hide-mobile" title="メルカリ(手数料10%+送料¥160)で利益率10%が出る仕入上限（直近7日中央値ベース）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
+              <th class="sortable" onclick="setSort('roi7')"       id="th-roi7" title="直近7日の実際の安値で仕入れ、スニダン中央値で売った場合の利益率（販売手数料・送料控除後）。5%以上=緑">想定利益<span class="sort-icon" id="si-roi7"></span></th>
+              <th class="hide-mobile" title="スニダンで売った場合の損益分岐点（売値の前提は7日中央値と直近3日中央値の低い方）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">SNKRDUNK</span></th>
+              <th class="hide-mobile" title="メルカリで売った場合の損益分岐点（手数料10%+送料¥160）">仕入上限<br><span style="font-weight:400;font-size:9px;text-transform:none">メルカリ</span></th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -341,10 +341,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="assets/purchase.js?v=20261103"></script>
-<script src="assets/market.js?v=20261113"></script>
-<script src="assets/market-ui.js?v=20261113b"></script>
-<script src="assets/purchase-ui.js?v=20261113"></script>
+<script src="assets/purchase.js?v=20261117"></script>
+<script src="assets/market.js?v=20261117"></script>
+<script src="assets/market-ui.js?v=20261117"></script>
+<script src="assets/purchase-ui.js?v=20261117"></script>
 <script>
 // ===== GLOBALS =====
 // DBは同一オリジン(GitHub Pages)から取得する。
